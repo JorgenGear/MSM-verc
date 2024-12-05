@@ -1,26 +1,41 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Color scheme inspired by Amazon's design, adapted for local business marketplace
  */
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = '#232f3e'; // Dark blue (primary)
+const tintColorDark = '#ff9900'; // Orange accent
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#111111',
+    background: '#ffffff',
     tint: tintColorLight,
-    icon: '#687076',
+    icon: '#555555',
     tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tabIconSelected: '#ff9900',
+    primary: '#232f3e',     // Dark blue
+    secondary: '#ff9900',   // Orange
+    accent: '#37475a',      // Lighter blue
+    success: '#168342',     // Green for success states
+    warning: '#ff9900',     // Orange for warnings
+    error: '#d41f1f',       // Red for errors
+    border: '#dddddd',      // Light gray for borders
+    searchBar: '#febd69',   // Light orange for search
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#ffffff',
+    background: '#191919',
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    tabIconSelected: '#ff9900',
+    primary: '#232f3e',     // Dark blue
+    secondary: '#ff9900',   // Orange
+    accent: '#37475a',      // Lighter blue
+    success: '#168342',     // Green for success states
+    warning: '#ff9900',     // Orange for warnings
+    error: '#d41f1f',       // Red for errors
+    border: '#2d2d2d',      // Dark gray for borders
+    searchBar: '#37475a',   // Dark blue for search
   },
 };
