@@ -5,110 +5,187 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { SearchHeader } from '@/components/SearchHeader';
+import { router } from 'expo-router';
+import { useProducts } from '@/hooks/useProducts';
+import { useEffect, useState } from 'react';
+import { useCart } from '@/hooks/useCart';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { products, loading } = useProducts();
+  const { recentlyViewed } = useCart();
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
-  const renderDealCard = (discount: string, price: string, title: string) => (
-    <Pressable style={[styles.dealCard, { backgroundColor: colors.background }]}>
+  const carouselItems = [
+    {
+      id: 1,
+      image: require('@/assets/images/partial-react-logo.png'),
+      title: 'Special Deals',
+      link: '/deals',
+    },
+    {
+      id: 2,
+      image: require('@/assets/images/partial-react-logo.png'),
+      title: 'Local Favorites',
+      link: '/explore',
+    },
+    {
+      id: 3,
+      image: require('@/assets/images/partial-react-logo.png'),
+      title: 'New Arrivals',
+      link: '/new-arrivals',
+    },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCarouselIndex((current) => 
+        current === carouselItems.length - 1 ? 0 : current + 1
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderDealCard = (product: any) => (
+    <Pressable 
+      key={product.id}
+      style={[styles.dealCard, { backgroundColor: colors.productCardBackground }]}
+      onPress={() => router.push(`/product/${product.id}`)}>
       <Image
-        source={require('@/assets/images/partial-react-logo.png')}
+        source={{ uri: product.image_url || require('@/assets/images/partial-react-logo.png') }}
         style={styles.dealImage}
       />
-      <ThemedView style={styles.dealBadge}>
-        <ThemedText style={styles.dealBadgeText}>Up to {discount} off</ThemedText>
+      <ThemedView style={[styles.dealBadge, { backgroundColor: colors.primary }]}>
+        <ThemedText style={[styles.dealBadgeText, { color: '#FFFFFF' }]}>
+          Up to {product.discount || '20%'} off
+        </ThemedText>
       </ThemedView>
-      <ThemedText style={styles.dealPrice}>${price}</ThemedText>
-      <ThemedText style={styles.dealTitle} numberOfLines={2}>{title}</ThemedText>
+      <ThemedText style={[styles.dealPrice, { color: colors.text }]}>${product.price}</ThemedText>
+      <ThemedText style={[styles.dealTitle, { color: colors.text }]} numberOfLines={2}>
+        {product.name}
+      </ThemedText>
     </Pressable>
   );
 
+  const navigateToDeals = () => router.push('/deals');
+  const navigateToBuyAgain = () => router.push('/buy-again');
+  const navigateToGiftCards = () => router.push('/gift-cards');
+  const navigateToCategory = (category: string) => 
+    router.push({ pathname: '/explore', params: { category: category.toLowerCase() } });
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <SearchHeader />
 
       {/* Main Carousel */}
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        style={styles.carousel}>
-        {[1, 2, 3].map((item) => (
-          <Image
-            key={item}
-            source={require('@/assets/images/partial-react-logo.png')}
-            style={styles.carouselImage}
-          />
-        ))}
-      </ScrollView>
+      <Pressable onPress={() => router.push(carouselItems[carouselIndex].link)}>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.carousel}
+          scrollEnabled={false}>
+          {carouselItems.map((item, index) => (
+            <Image
+              key={item.id}
+              source={item.image}
+              style={[
+                styles.carouselImage,
+                { opacity: index === carouselIndex ? 1 : 0 }
+              ]}
+            />
+          ))}
+        </ScrollView>
+      </Pressable>
 
       {/* Quick Links */}
-      <ThemedView style={styles.quickLinks}>
-        <Pressable style={styles.quickLink}>
+      <ThemedView style={[styles.quickLinks, { backgroundColor: colors.background }]}>
+        <Pressable style={styles.quickLink} onPress={navigateToDeals}>
           <IconSymbol name="tag.fill" size={24} color={colors.primary} />
-          <ThemedText style={styles.quickLinkText}>Today's Deals</ThemedText>
+          <ThemedText style={[styles.quickLinkText, { color: colors.text }]}>Today's Deals</ThemedText>
         </Pressable>
-        <Pressable style={styles.quickLink}>
+        <Pressable style={styles.quickLink} onPress={navigateToBuyAgain}>
           <IconSymbol name="cart.fill" size={24} color={colors.primary} />
-          <ThemedText style={styles.quickLinkText}>Buy Again</ThemedText>
+          <ThemedText style={[styles.quickLinkText, { color: colors.text }]}>Buy Again</ThemedText>
         </Pressable>
-        <Pressable style={styles.quickLink}>
+        <Pressable style={styles.quickLink} onPress={navigateToGiftCards}>
           <IconSymbol name="gift.fill" size={24} color={colors.primary} />
-          <ThemedText style={styles.quickLinkText}>Gift Cards</ThemedText>
+          <ThemedText style={[styles.quickLinkText, { color: colors.text }]}>Gift Cards</ThemedText>
         </Pressable>
       </ThemedView>
 
       {/* Deal of the Day */}
-      <ThemedView style={styles.section}>
-        <ThemedView style={styles.sectionHeader}>
-          <ThemedText style={styles.sectionTitle}>Deal of the Day</ThemedText>
-          <Pressable>
-            <ThemedText style={styles.seeAll}>See all deals</ThemedText>
+      <ThemedView style={[styles.section, { backgroundColor: colors.background }]}>
+        <ThemedView style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Deal of the Day</ThemedText>
+          <Pressable onPress={navigateToDeals}>
+            <ThemedText style={[styles.seeAll, { color: colors.link }]}>See all deals</ThemedText>
           </Pressable>
         </ThemedView>
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.dealOfDayImage}
-        />
-        <ThemedText style={styles.dealOfDayTitle}>Special Deal from Local Artisan</ThemedText>
-        <ThemedText style={styles.dealTimer}>Ends in 12:34:56</ThemedText>
+        <Pressable onPress={() => products?.[0]?.id && router.push(`/product/${products[0].id}`)}>
+          <Image
+            source={products?.[0]?.image_url 
+              ? { uri: products[0].image_url }
+              : require('@/assets/images/partial-react-logo.png')}
+            style={styles.dealOfDayImage}
+          />
+          <ThemedText style={styles.dealOfDayTitle}>
+            {products?.[0]?.name || 'Special Deal from Local Artisan'}
+          </ThemedText>
+          <ThemedText style={styles.dealTimer}>Limited Time Offer</ThemedText>
+        </Pressable>
       </ThemedView>
 
       {/* Popular Deals */}
-      <ThemedView style={styles.section}>
+      <ThemedView style={[styles.section, { backgroundColor: '#FFFFFF' }]}>
         <ThemedText style={styles.sectionTitle}>Popular Deals Near You</ThemedText>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dealsScroll}>
-          {renderDealCard('50%', '29.99', 'Local Handmade Craft Special')}
-          {renderDealCard('30%', '19.99', 'Fresh Local Produce Bundle')}
-          {renderDealCard('25%', '39.99', 'Artisanal Food Package')}
+          {(products || []).slice(0, 5).map(product => renderDealCard(product))}
         </ScrollView>
       </ThemedView>
 
       {/* Recently Viewed */}
-      <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Recently Viewed</ThemedText>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll}>
-          {[1, 2, 3, 4].map((item) => (
-            <Pressable key={item} style={styles.recentItem}>
-              <Image
-                source={require('@/assets/images/partial-react-logo.png')}
-                style={styles.recentImage}
-              />
-            </Pressable>
-          ))}
-        </ScrollView>
-      </ThemedView>
+      {recentlyViewed && recentlyViewed.length > 0 && (
+        <ThemedView style={[styles.section, { backgroundColor: '#FFFFFF' }]}>
+          <ThemedText style={styles.sectionTitle}>Recently Viewed</ThemedText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll}>
+            {recentlyViewed.map((product) => (
+              <Pressable 
+                key={product.id}
+                style={styles.recentItem}
+                onPress={() => router.push(`/product/${product.id}`)}>
+                <Image
+                  source={{ uri: product.image_url || require('@/assets/images/partial-react-logo.png') }}
+                  style={styles.recentImage}
+                />
+              </Pressable>
+            ))}
+          </ScrollView>
+        </ThemedView>
+      )}
 
       {/* Featured Categories */}
-      <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Featured Categories</ThemedText>
+      <ThemedView style={[styles.section, { backgroundColor: colors.background }]}>
+        <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Featured Categories</ThemedText>
         <ThemedView style={styles.categoryGrid}>
           {['Groceries', 'Restaurants', 'Crafts', 'Services'].map((category, index) => (
-            <Pressable key={index} style={[styles.categoryCard, { backgroundColor: colors.accent }]}>
-              <ThemedText style={styles.categoryText}>{category}</ThemedText>
+            <Pressable 
+              key={index} 
+              style={[
+                styles.categoryCard, 
+                { 
+                  backgroundColor: colors.categoryButtonBackground,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }
+              ]}
+              onPress={() => navigateToCategory(category)}>
+              <ThemedText style={[styles.categoryText, { color: colors.text }]}>
+                {category}
+              </ThemedText>
             </Pressable>
           ))}
         </ThemedView>
@@ -218,7 +295,6 @@ const styles = StyleSheet.create({
   },
   dealTitle: {
     fontSize: 14,
-    opacity: 0.8,
   },
   recentScroll: {
     marginTop: 10,
@@ -244,9 +320,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   categoryText: {
-    color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
   },

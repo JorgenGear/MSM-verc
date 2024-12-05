@@ -28,49 +28,61 @@ export default function ExploreScreen() {
   const renderProductCard = (product: any) => (
     <Pressable 
       key={product.id}
-      style={[styles.productCard, { backgroundColor: colors.background }]}>
+      style={[styles.productCard, { backgroundColor: colors.productCardBackground }]}
+      onPress={() => router.push(`/product/${product.id}`)}>
       <Image
         source={{ uri: product.image_url }}
         style={styles.productImage}
       />
-      <ThemedView style={styles.productInfo}>
-        <ThemedText style={styles.productTitle} numberOfLines={2}>{product.name}</ThemedText>
+      <ThemedView style={[styles.productInfo, { backgroundColor: colors.productCardBackground }]}>
+        <ThemedText style={[styles.productTitle, { color: colors.text }]} numberOfLines={2}>
+          {product.name}
+        </ThemedText>
         <ThemedView style={styles.ratingContainer}>
-          <IconSymbol name="star.fill" size={16} color={colors.secondary} />
-          <ThemedText style={styles.rating}>{product.shop?.rating}</ThemedText>
-          <ThemedText style={styles.reviews}>({product.shop?.name})</ThemedText>
+          <IconSymbol name="star.fill" size={16} color={colors.ratingStars} />
+          <ThemedText style={[styles.rating, { color: colors.text }]}>{product.shop?.rating}</ThemedText>
+          <ThemedText style={[styles.reviews, { color: colors.text }]}>({product.shop?.name})</ThemedText>
         </ThemedView>
-        <ThemedText style={styles.primeEligible}>Eligible for Local Pickup</ThemedText>
-        <ThemedText style={styles.price}>${product.price}</ThemedText>
+        <ThemedText style={[styles.primeEligible, { color: colors.success }]}>
+          Eligible for Local Pickup
+        </ThemedText>
+        <ThemedText style={[styles.price, { color: colors.text }]}>${product.price}</ThemedText>
       </ThemedView>
     </Pressable>
   );
 
   if (productsLoading || shopsLoading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
+      <ThemedView style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </ThemedView>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <SearchHeader />
 
       {/* Filter Bar */}
-      <ThemedView style={[styles.filterBar, { borderColor: colors.border }]}>
+      <ThemedView 
+        style={[
+          styles.filterBar, 
+          { 
+            borderColor: colors.border,
+            backgroundColor: colors.background 
+          }
+        ]}>
         <Pressable style={styles.filterButton}>
-          <IconSymbol name="line.3.horizontal.decrease" size={20} color={colors.icon} />
-          <ThemedText style={styles.filterText}>Filter</ThemedText>
+          <IconSymbol name="line.3.horizontal.decrease" size={20} color={colors.text} />
+          <ThemedText style={[styles.filterText, { color: colors.text }]}>Filter</ThemedText>
         </Pressable>
         <Pressable style={styles.filterButton}>
-          <IconSymbol name="arrow.up.arrow.down" size={20} color={colors.icon} />
-          <ThemedText style={styles.filterText}>Sort</ThemedText>
+          <IconSymbol name="arrow.up.arrow.down" size={20} color={colors.text} />
+          <ThemedText style={[styles.filterText, { color: colors.text }]}>Sort</ThemedText>
         </Pressable>
         <Pressable style={styles.filterButton}>
-          <IconSymbol name="map" size={20} color={colors.icon} />
-          <ThemedText style={styles.filterText}>Map View</ThemedText>
+          <IconSymbol name="map" size={20} color={colors.text} />
+          <ThemedText style={[styles.filterText, { color: colors.text }]}>Map View</ThemedText>
         </Pressable>
       </ThemedView>
 
@@ -86,11 +98,15 @@ export default function ExploreScreen() {
             onPress={() => handleCategoryPress(category)}
             style={[
               styles.categoryChip,
-              { backgroundColor: category === selectedCategory ? colors.primary : colors.background }
+              { 
+                backgroundColor: category === selectedCategory ? colors.primary : colors.categoryButtonBackground,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }
             ]}>
             <ThemedText style={[
               styles.categoryChipText,
-              { color: category === selectedCategory ? '#ffffff' : colors.text }
+              { color: category === selectedCategory ? '#FFFFFF' : colors.text }
             ]}>
               {category}
             </ThemedText>
@@ -99,29 +115,31 @@ export default function ExploreScreen() {
       </ScrollView>
 
       {/* Results Count */}
-      <ThemedText style={styles.resultsCount}>{products.length} results in your area</ThemedText>
+      <ThemedText style={[styles.resultsCount, { color: colors.text }]}>
+        {products.length} results in your area
+      </ThemedText>
 
       {/* Product Grid */}
-      <ThemedView style={styles.productGrid}>
+      <ThemedView style={[styles.productGrid, { backgroundColor: colors.background }]}>
         {products.map(product => renderProductCard(product))}
       </ThemedView>
 
       {/* Featured Shops */}
-      <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Featured Local Shops</ThemedText>
+      <ThemedView style={[styles.section, { backgroundColor: colors.background, borderColor: colors.border }]}>
+        <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Featured Local Shops</ThemedText>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {shops.map((shop) => (
             <Pressable 
               key={shop.id} 
-              style={[styles.shopCard, { backgroundColor: colors.background }]}>
+              style={[styles.shopCard, { backgroundColor: colors.productCardBackground }]}>
               <Image
                 source={{ uri: shop.image_url }}
                 style={styles.shopImage}
               />
-              <ThemedText style={styles.shopName}>{shop.name}</ThemedText>
+              <ThemedText style={[styles.shopName, { color: colors.text }]}>{shop.name}</ThemedText>
               <ThemedView style={styles.ratingContainer}>
-                <IconSymbol name="star.fill" size={16} color={colors.secondary} />
-                <ThemedText style={styles.rating}>{shop.rating}</ThemedText>
+                <IconSymbol name="star.fill" size={16} color={colors.ratingStars} />
+                <ThemedText style={[styles.rating, { color: colors.text }]}>{shop.rating}</ThemedText>
               </ThemedView>
             </Pressable>
           ))}

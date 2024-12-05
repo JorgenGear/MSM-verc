@@ -15,22 +15,39 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.secondary,
+        tabBarActiveTintColor: colors.primary,
         headerShown: true,
         headerStyle: {
           backgroundColor: colors.primary,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.divider,
         },
-        headerTintColor: '#ffffff',
+        headerTitleStyle: {
+          color: '#FFFFFF',
+          fontSize: 18,
+          fontWeight: '600',
+        },
+        headerTintColor: '#FFFFFF',
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            backgroundColor: colors.primary,
+            backgroundColor: colors.surfaceBackground,
+            borderTopColor: colors.divider,
+            borderTopWidth: 1,
           },
           default: {
-            backgroundColor: colors.primary,
+            backgroundColor: colors.surfaceBackground,
+            borderTopColor: colors.divider,
+            borderTopWidth: 1,
           },
         }),
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
       }}>
       <Tabs.Screen
         name="index"
