@@ -1,33 +1,58 @@
-import { StyleSheet, ScrollView, Pressable, Image, TextInput } from 'react-native';
+import { StyleSheet, ScrollView, TextInput, Pressable, Image, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { SearchHeader } from '@/components/SearchHeader';
+import { useProducts } from '@/hooks/useProducts';
+import { useShops } from '@/hooks/useShops';
+import { useState, useCallback } from 'react';
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { products, loading: productsLoading, getProductsByCategory } = useProducts();
+  const { shops, loading: shopsLoading } = useShops();
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const renderProductCard = (title: string, price: string, rating: string, reviews: string) => (
-    <Pressable style={[styles.productCard, { backgroundColor: colors.background }]}>
+  const categories = ['All', 'Local Shops', 'Handmade', 'Food', 'Services', 'Crafts'];
+
+  const handleCategoryPress = useCallback((category: string) => {
+    setSelectedCategory(category);
+    if (category !== 'All') {
+      getProductsByCategory(category);
+    }
+  }, [getProductsByCategory]);
+
+  const renderProductCard = (product: any) => (
+    <Pressable 
+      key={product.id}
+      style={[styles.productCard, { backgroundColor: colors.background }]}>
       <Image
-        source={require('@/assets/images/partial-react-logo.png')}
+        source={{ uri: product.image_url }}
         style={styles.productImage}
       />
       <ThemedView style={styles.productInfo}>
-        <ThemedText style={styles.productTitle} numberOfLines={2}>{title}</ThemedText>
+        <ThemedText style={styles.productTitle} numberOfLines={2}>{product.name}</ThemedText>
         <ThemedView style={styles.ratingContainer}>
           <IconSymbol name="star.fill" size={16} color={colors.secondary} />
-          <ThemedText style={styles.rating}>{rating}</ThemedText>
-          <ThemedText style={styles.reviews}>({reviews})</ThemedText>
+          <ThemedText style={styles.rating}>{product.shop?.rating}</ThemedText>
+          <ThemedText style={styles.reviews}>({product.shop?.name})</ThemedText>
         </ThemedView>
         <ThemedText style={styles.primeEligible}>Eligible for Local Pickup</ThemedText>
-        <ThemedText style={styles.price}>${price}</ThemedText>
+        <ThemedText style={styles.price}>${product.price}</ThemedText>
       </ThemedView>
     </Pressable>
   );
+
+  if (productsLoading || shopsLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -55,16 +80,17 @@ export default function ExploreScreen() {
         showsHorizontalScrollIndicator={false} 
         style={styles.categoriesScroll}
         contentContainerStyle={styles.categoriesContent}>
-        {['All', 'Local Shops', 'Handmade', 'Food', 'Services', 'Crafts'].map((category, index) => (
+        {categories.map((category, index) => (
           <Pressable 
             key={index} 
+            onPress={() => handleCategoryPress(category)}
             style={[
               styles.categoryChip,
-              { backgroundColor: index === 0 ? colors.primary : colors.background }
+              { backgroundColor: category === selectedCategory ? colors.primary : colors.background }
             ]}>
             <ThemedText style={[
               styles.categoryChipText,
-              { color: index === 0 ? '#ffffff' : colors.text }
+              { color: category === selectedCategory ? '#ffffff' : colors.text }
             ]}>
               {category}
             </ThemedText>
@@ -73,32 +99,29 @@ export default function ExploreScreen() {
       </ScrollView>
 
       {/* Results Count */}
-      <ThemedText style={styles.resultsCount}>285 results in your area</ThemedText>
+      <ThemedText style={styles.resultsCount}>{products.length} results in your area</ThemedText>
 
       {/* Product Grid */}
       <ThemedView style={styles.productGrid}>
-        {renderProductCard('Local Artisan Handmade Pottery', '49.99', '4.8', '127')}
-        {renderProductCard('Fresh Local Organic Produce Box', '34.99', '4.9', '89')}
-        {renderProductCard('Handcrafted Jewelry Set', '79.99', '4.7', '56')}
-        {renderProductCard('Local Honey Collection', '24.99', '4.9', '234')}
+        {products.map(product => renderProductCard(product))}
       </ThemedView>
 
       {/* Featured Shops */}
       <ThemedView style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Featured Local Shops</ThemedText>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['Artisan Market', 'Fresh Foods', 'Craft Corner'].map((shop, index) => (
+          {shops.map((shop) => (
             <Pressable 
-              key={index} 
+              key={shop.id} 
               style={[styles.shopCard, { backgroundColor: colors.background }]}>
               <Image
-                source={require('@/assets/images/partial-react-logo.png')}
+                source={{ uri: shop.image_url }}
                 style={styles.shopImage}
               />
-              <ThemedText style={styles.shopName}>{shop}</ThemedText>
+              <ThemedText style={styles.shopName}>{shop.name}</ThemedText>
               <ThemedView style={styles.ratingContainer}>
                 <IconSymbol name="star.fill" size={16} color={colors.secondary} />
-                <ThemedText style={styles.rating}>4.8</ThemedText>
+                <ThemedText style={styles.rating}>{shop.rating}</ThemedText>
               </ThemedView>
             </Pressable>
           ))}
@@ -111,6 +134,11 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterBar: {
     flexDirection: 'row',
