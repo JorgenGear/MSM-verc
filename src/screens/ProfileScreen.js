@@ -49,26 +49,15 @@ const ProfileScreen = ({ navigation }) => {
     wishlist: 5,
   };
 
+  // Change your handleLogout function to this:
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            // Implement logout logic
-            console.log('User logged out');
-          },
-        },
-      ]
-    );
+    // Clear user data or call logout context function
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'SignIn' }],
+    });
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,6 +73,9 @@ const ProfileScreen = ({ navigation }) => {
           </View>
           <Text style={styles.userName}>{user.name}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
+
+
+          
           <TouchableOpacity 
             style={styles.editButton}
             onPress={() => navigation.navigate('EditProfile')}

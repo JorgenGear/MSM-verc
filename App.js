@@ -17,6 +17,7 @@ import AuthPromptScreen from './src/screens/auth/AuthPromptScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import SignInScreen from './src/screens/auth/SignInScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import LogoutScreen from './src/screens/auth/LogoutScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import EditProfileScreen from './src/screens/profile/EditProfileScreen';
 import OrderHistoryScreen from './src/screens/profile/OrderHistoryScreen';
@@ -493,6 +494,13 @@ const RootStack = () => {
             fontWeight: '600',
           },
         }}
+      />
+      <Stack.Screen 
+       name="Logout" 
+       component={LogoutScreen}
+       options={{ 
+       headerShown: false 
+      }}
       />
     </Stack.Navigator>
     
