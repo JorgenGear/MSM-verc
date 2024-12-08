@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
 // Get Supabase URL and Anon Key from environment variables
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl as string;
+const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey as string;
 
 // Create a custom storage implementation that handles SSR
 const ExpoSecureStorage = {
