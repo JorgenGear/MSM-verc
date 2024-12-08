@@ -99,7 +99,6 @@ export function useCart() {
   const updateQuantity = async (itemId: string, quantity: number) => {
     try {
       if (quantity < 1) {
-        // If quantity is less than 1, remove the item
         await removeItem(itemId);
         return;
       }
@@ -107,18 +106,14 @@ export function useCart() {
       const newItems = items.map(item =>
         item.id === itemId ? { ...item, quantity } : item
       );
-
-      // First update the state
       setItems(newItems);
-      
-      // Then save to storage
+
       await AsyncStorage.setItem(
         `cart_${session?.user?.id || 'guest'}`,
         JSON.stringify(newItems)
       );
     } catch (error) {
       console.error('Error updating quantity:', error);
-      // Revert the state if storage fails
       await loadCart();
     }
   };

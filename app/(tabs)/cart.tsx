@@ -12,7 +12,17 @@ import { Button } from '@/components/ui/Button';
 export default function CartScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { items, updateQuantity, removeItem, getSubtotal } = useCartContext();
+  const { items, loading, updateQuantity, removeItem, getSubtotal } = useCartContext();
+
+  if (loading) {
+    return (
+      <ThemedView style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
+        <AnimatedTransition type="fadeIn">
+          {/* Add your loading indicator here if desired */}
+        </AnimatedTransition>
+      </ThemedView>
+    );
+  }
 
   if (!items.length) {
     return (
