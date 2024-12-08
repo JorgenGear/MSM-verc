@@ -54,7 +54,13 @@ export default function CartScreen() {
                 <ThemedView style={styles.quantityContainer}>
                   <Pressable
                     style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => updateQuantity(item.id, item.quantity - 1)}>
+                    onPress={() => {
+                      if (item.quantity > 1) {
+                        updateQuantity(item.id, item.quantity - 1);
+                      } else {
+                        removeItem(item.id);
+                      }
+                    }}>
                     <IconSymbol name="minus" size={16} color={colors.text} />
                   </Pressable>
                   <ThemedText style={[styles.quantity, { color: colors.text }]}>
@@ -62,7 +68,12 @@ export default function CartScreen() {
                   </ThemedText>
                   <Pressable
                     style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+                    onPress={() => {
+                      const newQuantity = item.quantity + 1;
+                      if (newQuantity <= 99) {
+                        updateQuantity(item.id, newQuantity);
+                      }
+                    }}>
                     <IconSymbol name="plus" size={16} color={colors.text} />
                   </Pressable>
                   <Pressable
