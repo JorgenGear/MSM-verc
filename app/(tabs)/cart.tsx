@@ -8,11 +8,16 @@ import { useCartContext } from '@/providers/CartProvider';
 import { router } from 'expo-router';
 import { AnimatedTransition } from '@/components/AnimatedTransition';
 import { Button } from '@/components/ui/Button';
+import * as React from 'react';
 
 export default function CartScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { items, loading, updateQuantity, removeItem, getSubtotal } = useCartContext();
+
+  React.useEffect(() => {
+    console.log('Cart items updated:', items?.length);
+  }, [items]);
 
   if (loading) {
     return (
@@ -45,10 +50,10 @@ export default function CartScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView key={items.length} style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scrollView}>
         {items.map((item) => (
-          <AnimatedTransition key={item.id} type="fadeIn" delay={200}>
+          <AnimatedTransition key={`${item.id}-${item.quantity}`} type="fadeIn" delay={200}>
             <ThemedView style={[styles.cartItem, { backgroundColor: colors.productCardBackground }]}>
               <Image source={{ uri: item.image_url }} style={styles.itemImage} />
               <ThemedView style={[styles.itemDetails, { backgroundColor: colors.productCardBackground }]}>

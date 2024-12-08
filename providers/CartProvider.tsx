@@ -32,4 +32,4 @@ export function useCartContext() {
     throw new Error('useCartContext must be used within a CartProvider');
   }
   return context;
-} 
+}
