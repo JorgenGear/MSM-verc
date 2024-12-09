@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, FlatList, Pressable, Image, ActivityIndicator, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useProducts } from '@/hooks/useProducts';
 import { SearchHeader } from '@/components/SearchHeader';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const DEAL_CATEGORIES = [
   'All Deals',
@@ -20,23 +21,34 @@ const DEAL_CATEGORIES = [
 export default function DealsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { products, loading } = useProducts();
+  const { products, loading, refreshProducts } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState('All Deals');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Filter products with discounts and sort by discount percentage
   const dealsProducts = products
     ?.filter(product => product.discount > 0)
     .sort((a, b) => b.discount - a.discount) || [];
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshProducts();
+    setRefreshing(false);
+  }, [refreshProducts]);
+
   const renderDealItem = ({ item }: any) => (
     <Pressable
       style={[styles.dealCard, { backgroundColor: colors.cardBackground }]}
-      onPress={() => router.push(`/product/${item.id}`)}>
+      onPress={() => router.push(`/product/${item.id}`)}
+    >
+      {/* Discount Badge */}
       <ThemedView style={[styles.dealBadge, { backgroundColor: colors.saveBadge }]}>
         <ThemedText style={styles.dealBadgeText}>
           Save {item.discount}%
         </ThemedText>
       </ThemedView>
+
+      {/* Product Image */}
       <Image
         source={
           item.image_url
@@ -44,24 +56,61 @@ export default function DealsScreen() {
             : require('@/assets/images/partial-react-logo.png')
         }
         style={styles.dealImage}
+        defaultSource={require('@/assets/images/partial-react-logo.png')}
       />
+
+      {/* Deal Info */}
       <ThemedView style={styles.dealInfo}>
         <ThemedText style={styles.dealTitle} numberOfLines={2}>
           {item.name}
         </ThemedText>
+
+        {/* Price Section */}
         <ThemedView style={styles.priceContainer}>
           <ThemedText style={[styles.dealPrice, { color: colors.priceRed }]}>
             ${(item.price * (1 - item.discount / 100)).toFixed(2)}
           </ThemedText>
-          <ThemedText style={styles.originalPrice}>
+          <ThemedText style={[styles.originalPrice, { color: colors.textSecondary }]}>
             List: ${item.price}
           </ThemedText>
         </ThemedView>
-        <ThemedText style={[styles.shopName, { color: colors.link }]}>
-          {item.shop.name}
-        </ThemedText>
+
+        {/* Shop Info */}
+        {item.shop && (
+          <ThemedView style={styles.shopInfo}>
+            <ThemedText style={[styles.shopName, { color: colors.link }]}>
+              {item.shop.name}
+            </ThemedText>
+            <ThemedView style={styles.ratingContainer}>
+              <IconSymbol name="star.fill" size={14} color={colors.ratingStars} />
+              <ThemedText style={styles.rating}>
+                {item.shop.rating.toFixed(1)}
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+        )}
+
+        {/* Time Remaining */}
+        {item.endsAt && (
+          <ThemedView style={styles.timeContainer}>
+            <IconSymbol name="clock" size={14} color={colors.textSecondary} />
+            <ThemedText style={[styles.timeText, { color: colors.textSecondary }]}>
+              Ends in {item.endsAt}
+            </ThemedText>
+          </ThemedView>
+        )}
       </ThemedView>
     </Pressable>
+  );
+
+  const renderEmptyState = () => (
+    <ThemedView style={styles.emptyContainer}>
+      <IconSymbol name="tag" size={64} color={colors.icon} />
+      <ThemedText style={styles.emptyTitle}>No deals available</ThemedText>
+      <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+        Check back soon for new deals from local shops
+      </ThemedText>
+    </ThemedView>
   );
 
   if (loading) {
@@ -90,14 +139,16 @@ export default function DealsScreen() {
                   selectedCategory === item ? colors.primary : colors.lightGray,
               },
             ]}
-            onPress={() => setSelectedCategory(item)}>
+            onPress={() => setSelectedCategory(item)}
+          >
             <ThemedText
               style={[
                 styles.categoryText,
                 {
                   color: selectedCategory === item ? '#ffffff' : colors.mediumGray,
                 },
-              ]}>
+              ]}
+            >
               {item}
             </ThemedText>
           </Pressable>
@@ -113,16 +164,10 @@ export default function DealsScreen() {
         numColumns={2}
         contentContainerStyle={styles.dealsGrid}
         columnWrapperStyle={styles.dealsRow}
-        ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
-        ListEmptyComponent={
-          <ThemedView style={styles.emptyContainer}>
-            <IconSymbol name="tag" size={64} color={colors.icon} />
-            <ThemedText style={styles.emptyTitle}>No deals available</ThemedText>
-            <ThemedText style={styles.emptyText}>
-              Check back soon for new deals from local shops
-            </ThemedText>
-          </ThemedView>
-        }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={renderEmptyState}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
       />
     </ThemedView>
   );
@@ -159,7 +204,7 @@ const styles = StyleSheet.create({
   },
   dealCard: {
     width: '48%',
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
     shadowColor: '#000',
@@ -195,9 +240,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
     height: 40,
+    lineHeight: 20,
   },
   priceContainer: {
-    marginBottom: 4,
+    marginBottom: 8,
   },
   dealPrice: {
     fontSize: 18,
@@ -206,9 +252,33 @@ const styles = StyleSheet.create({
   originalPrice: {
     fontSize: 12,
     textDecorationLine: 'line-through',
-    opacity: 0.7,
+  },
+  shopInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   shopName: {
+    fontSize: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rating: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  timeText: {
     fontSize: 12,
   },
   separator: {
@@ -230,6 +300,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     textAlign: 'center',
-    opacity: 0.7,
   },
-}); 
+});
