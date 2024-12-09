@@ -8,11 +8,26 @@ import { useCartContext } from '@/providers/CartProvider';
 import { router } from 'expo-router';
 import { AnimatedTransition } from '@/components/AnimatedTransition';
 import { Button } from '@/components/ui/Button';
+import * as React from 'react';
 
 export default function CartScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { items, updateQuantity, removeItem, getSubtotal } = useCartContext();
+  const { items, loading, updateQuantity, removeItem, getSubtotal } = useCartContext();
+
+  React.useEffect(() => {
+    console.log('Cart items updated:', items?.length);
+  }, [items]);
+
+  if (loading) {
+    return (
+      <ThemedView style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
+        <AnimatedTransition type="fadeIn">
+          {/* Add your loading indicator here if desired */}
+        </AnimatedTransition>
+      </ThemedView>
+    );
+  }
 
   if (!items.length) {
     return (
@@ -35,10 +50,10 @@ export default function CartScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView key={items.length} style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scrollView}>
         {items.map((item) => (
-          <AnimatedTransition key={item.id} type="fadeIn" delay={200}>
+          <AnimatedTransition key={`${item.id}-${item.quantity}`} type="fadeIn" delay={200}>
             <ThemedView style={[styles.cartItem, { backgroundColor: colors.productCardBackground }]}>
               <Image source={{ uri: item.image_url }} style={styles.itemImage} />
               <ThemedView style={[styles.itemDetails, { backgroundColor: colors.productCardBackground }]}>
@@ -54,7 +69,13 @@ export default function CartScreen() {
                 <ThemedView style={styles.quantityContainer}>
                   <Pressable
                     style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => updateQuantity(item.id, item.quantity - 1)}>
+                    onPress={() => {
+                      if (item.quantity > 1) {
+                        updateQuantity(item.id, item.quantity - 1);
+                      } else {
+                        removeItem(item.id);
+                      }
+                    }}>
                     <IconSymbol name="minus" size={16} color={colors.text} />
                   </Pressable>
                   <ThemedText style={[styles.quantity, { color: colors.text }]}>
@@ -62,7 +83,12 @@ export default function CartScreen() {
                   </ThemedText>
                   <Pressable
                     style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+                    onPress={() => {
+                      const newQuantity = item.quantity + 1;
+                      if (newQuantity <= 99) {
+                        updateQuantity(item.id, newQuantity);
+                      }
+                    }}>
                     <IconSymbol name="plus" size={16} color={colors.text} />
                   </Pressable>
                   <Pressable
