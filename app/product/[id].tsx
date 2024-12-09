@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, Image, Pressable, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, Image, Pressable, ActivityIndicator, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -10,6 +10,7 @@ import { useCartContext } from '@/providers/CartProvider';
 import { useWishlistContext } from '@/providers/WishlistProvider';
 import { useProductDetails } from '@/hooks/useProductDetails';
 import { ProductReviews } from '@/components/ProductReviews';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams();
@@ -77,18 +78,43 @@ export default function ProductScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Product Image */}
-      {product.image_url && (
-        <Image source={{ uri: product.image_url }} style={styles.image} resizeMode="cover" />
-      )}
+      <View style={styles.imageContainer}>
+        {product.image_url && (
+          <Image 
+            source={{ uri: product.image_url }} 
+            style={styles.image} 
+            resizeMode="cover"
+          />
+        )}
+        {product.discount > 0 && (
+          <View style={[styles.discountBadge, { backgroundColor: colors.saveBadge }]}>
+            <ThemedText style={styles.discountText}>
+              {product.discount}% OFF
+            </ThemedText>
+          </View>
+        )}
+      </View>
 
       <ThemedView style={styles.content}>
         {/* Product Header */}
         <ThemedView style={styles.header}>
           <ThemedView style={styles.titleContainer}>
             <ThemedText style={styles.name}>{product.name}</ThemedText>
-            <ThemedText style={styles.price}>${product.price}</ThemedText>
+            <View style={styles.priceContainer}>
+              <ThemedText style={[styles.price, { color: colors.priceRed }]}>
+                ${product.price}
+              </ThemedText>
+              {product.discount > 0 && (
+                <ThemedText style={styles.originalPrice}>
+                  ${(product.price / (1 - product.discount / 100)).toFixed(2)}
+                </ThemedText>
+              )}
+            </View>
           </ThemedView>
-          <Pressable onPress={handleToggleWishlist}>
+          <Pressable 
+            style={styles.wishlistButton} 
+            onPress={handleToggleWishlist}
+          >
             <IconSymbol
               name={inWishlist ? 'heart.fill' : 'heart'}
               size={24}
@@ -99,50 +125,97 @@ export default function ProductScreen() {
 
         {/* Shop Info */}
         <Pressable
-          style={styles.shopContainer}
-          onPress={() => router.push(`/shop/${product.shop.id}`)}>
+          style={[styles.shopContainer, { backgroundColor: colors.cardBackground }]}
+          onPress={() => router.push(`/shop/${product.shop.id}`)}
+        >
           <ThemedView style={styles.shopInfo}>
             <ThemedText style={styles.shopName}>{product.shop.name}</ThemedText>
             <ThemedView style={styles.ratingContainer}>
-              <IconSymbol name="star.fill" size={16} color={colors.secondary} />
+              <IconSymbol name="star.fill" size={16} color={colors.ratingStars} />
               <ThemedText style={styles.rating}>{product.shop.rating.toFixed(1)}</ThemedText>
             </ThemedView>
           </ThemedView>
-          <ThemedText style={styles.location}>{product.shop.location}</ThemedText>
+          <View style={styles.shopFooter}>
+            <ThemedText style={[styles.location, { color: colors.textSecondary }]}>
+              {product.shop.location}
+            </ThemedText>
+            <ThemedText style={[styles.viewShop, { color: colors.primary }]}>
+              View Shop
+            </ThemedText>
+          </View>
         </Pressable>
 
         {/* Product Description */}
-        <ThemedText style={styles.description}>{product.description}</ThemedText>
-
-        {/* Quantity Selector */}
-        <ThemedView style={styles.quantityContainer}>
-          <ThemedText style={styles.label}>Quantity:</ThemedText>
-          <ThemedView style={styles.quantityControls}>
-            <Pressable
-              style={[styles.quantityButton, { backgroundColor: colors.primary }]}
-              onPress={() => quantity > 1 && setQuantity(quantity - 1)}>
-              <IconSymbol name="minus" size={20} color="#ffffff" />
-            </Pressable>
-            <ThemedText style={styles.quantity}>{quantity}</ThemedText>
-            <Pressable
-              style={[styles.quantityButton, { backgroundColor: colors.primary }]}
-              onPress={() => quantity < product.stock && setQuantity(quantity + 1)}>
-              <IconSymbol name="plus" size={20} color="#ffffff" />
-            </Pressable>
-          </ThemedView>
+        <ThemedView style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Description</ThemedText>
+          <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
+            {product.description}
+          </ThemedText>
         </ThemedView>
 
-        <ThemedText style={styles.stock}>
-          {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-        </ThemedText>
+        {/* Quantity Selector */}
+        {/* Quantity Selector */}
+<ThemedView style={styles.quantityContainer}>
+  <ThemedText style={styles.label}>Quantity:</ThemedText>
+  <ThemedView style={styles.quantityControls}>
+    <Pressable
+      style={[
+        styles.quantityButton,
+        { 
+          backgroundColor: colors.background,
+          borderWidth: 1,
+          borderColor: colors.border
+        }
+      ]}
+      onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+    >
+      <ThemedText style={[
+        styles.quantityButtonText,
+        { color: quantity > 1 ? colors.text : colors.textSecondary }
+      ]}>
+        -
+      </ThemedText>
+    </Pressable>
+    
+    <ThemedText style={styles.quantity}>{quantity}</ThemedText>
+    
+    <Pressable
+      style={[
+        styles.quantityButton,
+        { 
+          backgroundColor: colors.background,
+          borderWidth: 1,
+          borderColor: colors.border
+        }
+      ]}
+      onPress={() => quantity < (product.stock || 99) && setQuantity(quantity + 1)}
+    >
+      <ThemedText style={[
+        styles.quantityButtonText,
+        { color: quantity < (product.stock || 99) ? colors.text : colors.textSecondary }
+      ]}>
+        +
+      </ThemedText>
+    </Pressable>
+  </ThemedView>
+</ThemedView>
 
         {/* Add to Cart Button */}
         <Pressable
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
+          style={[
+            styles.addButton, 
+            { 
+              backgroundColor: colors.primary,
+              opacity: product.stock === 0 ? 0.5 : 1,
+            }
+          ]}
           onPress={handleAddToCart}
-          disabled={product.stock === 0}>
-          <IconSymbol name="cart.badge.plus" size={24} color="#ffffff" />
-          <ThemedText style={styles.addButtonText}>Add to Cart</ThemedText>
+          disabled={product.stock === 0}
+        >
+          <IconSymbol name="cart.badge.plus" size={24} color="#FFFFFF" />
+          <ThemedText style={styles.addButtonText}>
+            Add to Cart
+          </ThemedText>
         </Pressable>
 
         {/* Reviews Section */}
@@ -155,14 +228,19 @@ export default function ProductScreen() {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <ThemedView style={styles.relatedProducts}>
-            <ThemedText style={styles.relatedTitle}>Related Products</ThemedText>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <ThemedView style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Related Products</ThemedText>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.relatedProductsScroll}
+            >
               {relatedProducts.map((relatedProduct) => (
                 <Pressable
                   key={relatedProduct.id}
-                  style={[styles.relatedCard, { backgroundColor: colors.background }]}
-                  onPress={() => router.push(`/product/${relatedProduct.id}`)}>
+                  style={[styles.relatedCard, { backgroundColor: colors.cardBackground }]}
+                  onPress={() => router.push(`/product/${relatedProduct.id}`)}
+                >
                   {relatedProduct.image_url && (
                     <Image
                       source={{ uri: relatedProduct.image_url }}
@@ -171,10 +249,13 @@ export default function ProductScreen() {
                     />
                   )}
                   <ThemedView style={styles.relatedInfo}>
-                    <ThemedText style={styles.relatedName} numberOfLines={2}>
+                    <ThemedText 
+                      style={styles.relatedName} 
+                      numberOfLines={2}
+                    >
                       {relatedProduct.name}
                     </ThemedText>
-                    <ThemedText style={styles.relatedPrice}>
+                    <ThemedText style={[styles.relatedPrice, { color: colors.priceRed }]}>
                       ${relatedProduct.price}
                     </ThemedText>
                   </ThemedView>
@@ -337,5 +418,39 @@ const styles = StyleSheet.create({
   relatedPrice: {
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginRight: 16,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    overflow: 'hidden',
+    height: 40,
+  },
+  quantityButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityButtonText: {
+  fontSize: 24,
+  fontWeight: '500',
+  lineHeight: 24,
+},
+  quantity: {
+    fontSize: 16,
+    fontWeight: '500',
+    paddingHorizontal: 16,
   },
 }); 

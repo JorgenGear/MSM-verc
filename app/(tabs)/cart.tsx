@@ -90,11 +90,11 @@ export default function CartScreen() {
         </ThemedView>
         <Button
           title="Proceed to Checkout"
-          onPress={() => router.push('/checkout')}
+          onPress={() => router.replace('/checkout')}  // This is the key change
           variant="primary"
           size="large"
           fullWidth
-        />
+        />  
       </ThemedView>
     </ThemedView>
   );

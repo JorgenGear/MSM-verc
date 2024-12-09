@@ -18,35 +18,38 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         headerShown: true,
         headerStyle: {
-          backgroundColor: colors.primary,
+          backgroundColor: colors.headerBackground,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
           borderBottomColor: colors.divider,
+          height: Platform.OS === 'ios' ? 96 : 64, // Adjusted for iOS notch
         },
         headerTitleStyle: {
           color: '#FFFFFF',
           fontSize: 18,
           fontWeight: '600',
+          fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
         },
+        headerTitleAlign: 'center',
         headerTintColor: '#FFFFFF',
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            backgroundColor: colors.surfaceBackground,
-            borderTopColor: colors.divider,
-            borderTopWidth: 1,
-          },
-          default: {
-            backgroundColor: colors.surfaceBackground,
-            borderTopColor: colors.divider,
-            borderTopWidth: 1,
-          },
-        }),
+        tabBarStyle: {
+          backgroundColor: colors.surfaceBackground,
+          borderTopColor: colors.divider,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 84 : 64, // Adjusted for iPhone home indicator
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          paddingTop: 8,
+        },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+        },
+        tabBarIconStyle: {
+          marginBottom: -4, // Tighten up space between icon and label
         },
       }}>
       <Tabs.Screen
@@ -54,7 +57,13 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerTitle: 'MainStreet Markets',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <IconSymbol 
+              size={size} 
+              name="house.fill" 
+              color={color} 
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -62,7 +71,13 @@ export default function TabLayout() {
         options={{
           title: 'Browse',
           headerTitle: 'Browse Local Shops',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="list.bullet" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <IconSymbol 
+              size={size} 
+              name="list.bullet" 
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -70,7 +85,13 @@ export default function TabLayout() {
         options={{
           title: 'Cart',
           headerTitle: 'Shopping Cart',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="cart.fill" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <IconSymbol 
+              size={size} 
+              name="cart.fill" 
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -78,7 +99,22 @@ export default function TabLayout() {
         options={{
           title: 'Account',
           headerTitle: 'Your Account',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.fill" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <IconSymbol 
+              size={size} 
+              name="person.fill" 
+              color={color}
+            />
+          ),
+          headerRight: () => (
+            <IconSymbol
+              name="gear"
+              size={24}
+              color="#FFFFFF"
+              style={{ marginRight: 16 }}
+              onPress={() => router.push('/settings')}
+            />
+          ),
         }}
       />
     </Tabs>
