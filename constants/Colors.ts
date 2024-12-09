@@ -6,7 +6,48 @@ const PRIMARY_GREEN = '#0B5B3E';  // Dark green for main theme
 const LIGHT_GRAY = '#F8F8F8';    // Light gray for cards
 const OFF_WHITE = '#F5F5F5';     // Off-white for backgrounds
 
-export const Colors = {
+type ColorScheme = {
+  text: string;
+  background: string;
+  tint: string;
+  icon: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  success: string;
+  warning: string;
+  error: string;
+  border: string;
+  searchBar: string;
+  cardBackground: string;
+  link: string;
+  ratingStars: string;
+  priceRed: string;
+  dealGreen: string;
+  saveBadge: string;
+  lightGray: string;
+  mediumGray: string;
+  headerBackground: string;
+  footerBackground: string;
+  surfaceBackground: string;
+  divider: string;
+  inputBackground: string;
+  buttonHover: string;
+  navBackground: string;
+  tagBackground: string;
+  productCardBackground: string;
+  categoryButtonBackground: string;
+  categoryButtonText: string;
+};
+
+export type ColorSchemes = {
+  light: ColorScheme;
+  dark: ColorScheme;
+};
+
+export const Colors: ColorSchemes = {
   light: {
     text: '#0F1111',            // Dark text
     background: '#FFFFFF',       // Pure white background
@@ -43,7 +84,6 @@ export const Colors = {
     categoryButtonText: '#0F1111',      // Dark text for buttons
   },
   dark: {
-    // We'll focus on light theme for now
     text: '#0F1111',
     background: '#FFFFFF',
     tint: PRIMARY_GREEN,

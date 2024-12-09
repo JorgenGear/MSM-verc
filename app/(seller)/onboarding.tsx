@@ -31,10 +31,21 @@ export default function SellerOnboarding() {
     try {
       setLoading(true);
 
-      // Create seller profile
+      // Check if seller profile exists and update or create accordingly
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('seller_profiles')
+        .select()
+        .eq('id', session.user.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        throw fetchError;
+      }
+
+      // Update or insert seller profile
       const { error: sellerError } = await supabase
         .from('seller_profiles')
-        .insert({
+        .upsert({
           id: session.user.id,
           business_name: formData.businessName,
           business_description: formData.businessDescription,
@@ -42,6 +53,7 @@ export default function SellerOnboarding() {
           contact_phone: formData.contactPhone,
           business_address: formData.businessAddress,
           business_hours: formData.businessHours,
+          created_at: existingProfile?.created_at || new Date().toISOString(),
         });
 
       if (sellerError) throw sellerError;
@@ -54,23 +66,37 @@ export default function SellerOnboarding() {
 
       if (profileError) throw profileError;
 
-      // Create shop
+      // Check if shop exists
+      const { data: existingShop, error: shopFetchError } = await supabase
+        .from('shops')
+        .select()
+        .eq('owner_id', session.user.id)
+        .single();
+
+      if (shopFetchError && shopFetchError.code !== 'PGRST116') {
+        throw shopFetchError;
+      }
+
+      // Update or create shop
       const { error: shopError } = await supabase
         .from('shops')
-        .insert({
+        .upsert({
+          id: existingShop?.id, // Keep existing ID if it exists
           name: formData.businessName,
           description: formData.businessDescription,
           owner_id: session.user.id,
-          seller_id: session.user.id,
           location: formData.businessAddress,
+          category: existingShop?.category || 'General',
+          rating: existingShop?.rating || 0,
+          created_at: existingShop?.created_at || new Date().toISOString(),
         });
 
       if (shopError) throw shopError;
 
       router.replace('/(seller)/dashboard');
     } catch (error) {
-      console.error('Error creating seller profile:', error);
-      alert('Error creating seller profile. Please try again.');
+      console.error('Error updating seller profile:', error);
+      alert('Error updating seller profile. Please try again.');
     } finally {
       setLoading(false);
     }

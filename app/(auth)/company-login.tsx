@@ -8,7 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/lib/supabase';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
-export default function LoginScreen() {
+export default function CompanyLoginScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [email, setEmail] = useState('');
@@ -21,14 +21,27 @@ export default function LoginScreen() {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      router.replace('/(tabs)');
+      // Check if user is a company
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_company')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (!profile?.is_company) {
+        throw new Error('This account is not registered as a company');
+      }
+
+      router.replace('/(seller)/dashboard');
     } catch (error) {
       console.error('Error logging in:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -40,9 +53,9 @@ export default function LoginScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.header}>
-        <IconSymbol name="bag.fill" size={48} color={colors.primary} />
+        <IconSymbol name="building.2.fill" size={48} color={colors.primary} />
         <ThemedText style={styles.title}>MainStreet Markets</ThemedText>
-        <ThemedText style={styles.subtitle}>Sign in to your account</ThemedText>
+        <ThemedText style={styles.subtitle}>Company Sign In</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.form}>
@@ -53,12 +66,12 @@ export default function LoginScreen() {
         )}
 
         <ThemedView style={styles.inputGroup}>
-          <ThemedText style={styles.label}>Email</ThemedText>
+          <ThemedText style={styles.label}>Company Email</ThemedText>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background }]}
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter your email"
+            placeholder="Enter your company email"
             placeholderTextColor={colors.icon}
             autoCapitalize="none"
             keyboardType="email-address"
@@ -93,15 +106,15 @@ export default function LoginScreen() {
         </Pressable>
 
         <ThemedView style={styles.footer}>
-          <ThemedText>Don't have an account? </ThemedText>
-          <Link href="/register" style={{ color: colors.primary }}>
-            Sign up
+          <ThemedText>Don't have a company account? </ThemedText>
+          <Link href="/company-register" style={{ color: colors.primary }}>
+            Register here
           </Link>
         </ThemedView>
 
-        <ThemedView style={styles.companyLoginContainer}>
-          <Link href="/company-login" style={{ color: colors.primary }}>
-            <ThemedText style={styles.companyLoginText}>Trying to sign in as a company? Click here</ThemedText>
+        <ThemedView style={styles.regularLoginContainer}>
+          <Link href="/login" style={{ color: colors.primary }}>
+            <ThemedText style={styles.regularLoginText}>Back to regular sign in</ThemedText>
           </Link>
         </ThemedView>
       </ThemedView>
@@ -174,11 +187,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
   },
-  companyLoginContainer: {
+  regularLoginContainer: {
     marginTop: 30,
     alignItems: 'center',
   },
-  companyLoginText: {
+  regularLoginText: {
     fontSize: 16,
     textDecorationLine: 'underline',
   },

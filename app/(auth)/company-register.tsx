@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import { Link, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
@@ -8,10 +8,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { supabase } from '@/lib/supabase';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
-const RegisterScreen: React.FC = () => {
+export default function CompanyRegisterScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +24,7 @@ const RegisterScreen: React.FC = () => {
       setError(null);
 
       // Validate inputs
-      if (!fullName || !email || !password || !confirmPassword) {
+      if (!companyName || !email || !password || !confirmPassword) {
         throw new Error('Please fill in all fields');
       }
 
@@ -42,24 +42,54 @@ const RegisterScreen: React.FC = () => {
         password,
         options: {
           data: {
-            full_name: fullName,
+            company_name: companyName,
+            is_company: true,
           },
-          emailRedirectTo: window.location.origin,
         },
       });
 
       if (signUpError) throw signUpError;
 
-      // Sign in immediately after registration
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Wait for session to be established
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      
+      if (!session?.user) {
+        throw new Error('Failed to create account. Please try signing in.');
+      }
 
-      if (signInError) throw signInError;
+      // Create company profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: session.user.id,
+          username: email.split('@')[0],
+          full_name: companyName,
+          company_name: companyName,
+          email: email,
+          is_company: true,
+          created_at: new Date().toISOString(),
+        });
 
-      // Profile will be created automatically by the database trigger
-      router.replace('/(tabs)');
+      if (profileError) throw profileError;
+
+      // Create company storefront
+      const { error: storefrontError } = await supabase
+        .from('shops')
+        .insert({
+          name: companyName,
+          owner_id: session.user.id,
+          description: `Official store of ${companyName}`,
+          location: '',
+          category: 'General',
+          rating: 0,
+          created_at: new Date().toISOString(),
+        });
+
+      if (storefrontError) throw storefrontError;
+
+      router.replace('/(seller)/dashboard');
     } catch (error) {
       console.error('Error registering:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -71,9 +101,9 @@ const RegisterScreen: React.FC = () => {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.header}>
-        <IconSymbol name="bag.fill" size={48} color={colors.primary} />
+        <IconSymbol name="building.2.fill" size={48} color={colors.primary} />
         <ThemedText style={styles.title}>MainStreet Markets</ThemedText>
-        <ThemedText style={styles.subtitle}>Create your account</ThemedText>
+        <ThemedText style={styles.subtitle}>Create Company Account</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.form}>
@@ -84,23 +114,23 @@ const RegisterScreen: React.FC = () => {
         )}
 
         <ThemedView style={styles.inputGroup}>
-          <ThemedText style={styles.label}>Full Name</ThemedText>
+          <ThemedText style={styles.label}>Company Name</ThemedText>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background }]}
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Enter your full name"
+            value={companyName}
+            onChangeText={setCompanyName}
+            placeholder="Enter your company name"
             placeholderTextColor={colors.icon}
           />
         </ThemedView>
 
         <ThemedView style={styles.inputGroup}>
-          <ThemedText style={styles.label}>Email</ThemedText>
+          <ThemedText style={styles.label}>Company Email</ThemedText>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background }]}
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter your email"
+            placeholder="Enter your company email"
             placeholderTextColor={colors.icon}
             autoCapitalize="none"
             keyboardType="email-address"
@@ -138,22 +168,26 @@ const RegisterScreen: React.FC = () => {
           {loading ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <ThemedText style={styles.buttonText}>Create Account</ThemedText>
+            <ThemedText style={styles.buttonText}>Create Company Account</ThemedText>
           )}
         </Pressable>
 
         <ThemedView style={styles.footer}>
-          <ThemedText>Already have an account? </ThemedText>
-          <Link href="/login" style={{ color: colors.primary }}>
+          <ThemedText>Already have a company account? </ThemedText>
+          <Link href="/company-login" style={{ color: colors.primary }}>
             Sign in
+          </Link>
+        </ThemedView>
+
+        <ThemedView style={styles.regularLoginContainer}>
+          <Link href="/login" style={{ color: colors.primary }}>
+            <ThemedText style={styles.regularLoginText}>Back to regular sign in</ThemedText>
           </Link>
         </ThemedView>
       </ThemedView>
     </ThemedView>
   );
-};
-
-export default RegisterScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -215,5 +249,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ffffff',
     textAlign: 'center',
+  },
+  regularLoginContainer: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  regularLoginText: {
+    fontSize: 16,
+    textDecorationLine: 'underline',
   },
 }); 

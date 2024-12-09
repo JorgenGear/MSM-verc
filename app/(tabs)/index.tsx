@@ -105,7 +105,7 @@ export default function HomeScreen() {
       <ThemedView style={[styles.quickLinks, { backgroundColor: colors.background }]}>
         <Pressable style={styles.quickLink} onPress={navigateToDeals}>
           <IconSymbol name="tag.fill" size={24} color={colors.primary} />
-          <ThemedText style={[styles.quickLinkText, { color: colors.text }]}>Today's Deals</ThemedText>
+          <ThemedText style={[styles.quickLinkText, { color: colors.text }]}>TESTING</ThemedText>
         </Pressable>
         <Pressable style={styles.quickLink} onPress={navigateToBuyAgain}>
           <IconSymbol name="cart.fill" size={24} color={colors.primary} />

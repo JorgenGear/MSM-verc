@@ -7,11 +7,35 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/hooks/useAuth';
 import { router } from 'expo-router';
 import { AnimatedTransition } from '@/components/AnimatedTransition';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function AccountScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user, signOut } = useAuth();
+  const [isSeller, setIsSeller] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkSellerStatus();
+    }
+  }, [user]);
+
+  const checkSellerStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_seller')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setIsSeller(data?.is_seller || false);
+    } catch (error) {
+      console.error('Error checking seller status:', error);
+    }
+  };
 
   const menuItems = [
     { title: 'Your Orders', icon: 'box.fill', route: '/orders' },
@@ -19,6 +43,11 @@ export default function AccountScreen() {
     { title: 'Your Lists', icon: 'list.bullet', route: '/lists' },
     { title: 'Your Account', icon: 'person.fill', route: '/account-settings' },
     { title: 'Customer Service', icon: 'questionmark.circle.fill', route: '/support' },
+    ...(isSeller ? [
+      { title: 'Seller Dashboard', icon: 'building.2.fill', route: '/(seller)/dashboard' }
+    ] : [
+      { title: 'Become a Seller', icon: 'building.2.fill', route: '/(seller)/onboarding' }
+    ]),
   ];
 
   return (
@@ -42,7 +71,18 @@ export default function AccountScreen() {
         {menuItems.map((item, index) => (
           <AnimatedTransition key={index} type="fadeInSlide" delay={index * 100}>
             <Pressable
-              style={[styles.menuItem, { backgroundColor: colors.productCardBackground }]}
+              style={[
+                styles.menuItem,
+                {
+                  backgroundColor: colors.productCardBackground,
+                  borderColor: colors.border,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }
+              ]}
               onPress={() => router.push(item.route)}>
               <ThemedView style={styles.menuItemContent}>
                 <IconSymbol name={item.icon} size={24} color={colors.text} />
@@ -103,13 +143,15 @@ const styles = StyleSheet.create({
   menuSection: {
     paddingHorizontal: 16,
     gap: 12,
+    marginBottom: 16,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   menuItemContent: {
     flexDirection: 'row',

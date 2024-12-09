@@ -36,6 +36,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: typeof window !== 'undefined', // Only persist session in browser
     detectSessionInUrl: false,
+    flowType: 'pkce',
+    emailAuth: {
+      requireEmailConfirmation: false
+    }
   },
 });
 
@@ -46,6 +50,10 @@ export interface Profile {
   full_name: string;
   avatar_url?: string;
   created_at: string;
+  company_name?: string;
+  is_company?: boolean;
+  is_seller?: boolean;
+  email?: string;
 }
 
 export interface Shop {
@@ -96,5 +104,16 @@ export interface Review {
   product_id?: string;
   rating: number;
   comment: string;
+  created_at: string;
+}
+
+export interface SellerProfile {
+  id: string;
+  business_name: string;
+  business_description?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  business_address?: string;
+  business_hours?: string;
   created_at: string;
 } 
