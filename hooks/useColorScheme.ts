@@ -5,6 +5,7 @@
 
 import { useColorScheme as useNativeColorScheme } from 'react-native';
 
+
 // Define valid color scheme types
 type ColorScheme = 'light' | 'dark' | null;
 

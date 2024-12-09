@@ -102,6 +102,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Quick Links */}
+
       <View style={styles.quickLinks}>
         <Pressable 
           style={[styles.quickLinkItem, { backgroundColor: colors.cardBackground }]}
