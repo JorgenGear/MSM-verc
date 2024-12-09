@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, Pressable, Image, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, FlatList, Pressable, Image, ActivityIndicator, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -7,13 +7,21 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useProductSearch, ProductFilter } from '@/hooks/useProductSearch';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const SORT_OPTIONS = [
+  { id: 'newest', label: 'Newest' },
+  { id: 'price_asc', label: 'Price: Low to High' },
+  { id: 'price_desc', label: 'Price: High to Low' },
+  { id: 'rating', label: 'Top Rated' },
+];
 
 export default function SearchScreen() {
   const { q } = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { products, loading, totalCount, searchProducts, getCategories, getPriceRange } =
-    useProductSearch();
+  const { products, loading, totalCount, searchProducts, getCategories, getPriceRange } = useProductSearch();
+  
   const [filters, setFilters] = useState<ProductFilter>({
     searchQuery: q as string,
     sortBy: 'newest',
@@ -22,11 +30,7 @@ export default function SearchScreen() {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    loadInitialData();
-  }, [q]);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const [categoriesData, priceRangeData] = await Promise.all([
         getCategories(),
@@ -38,7 +42,11 @@ export default function SearchScreen() {
     } catch (error) {
       console.error('Error loading search data:', error);
     }
-  };
+  }, [q, filters]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [q]);
 
   const handleFilter = async (newFilters: Partial<ProductFilter>) => {
     const updatedFilters = { ...filters, ...newFilters };
@@ -46,124 +54,183 @@ export default function SearchScreen() {
     await searchProducts(updatedFilters);
   };
 
-  const renderProduct = ({ item }: { item: any }) => (
+  const renderProduct = useCallback(({ item }: { item: any }) => (
     <Pressable
-      style={[styles.productCard, { backgroundColor: colors.background }]}
-      onPress={() => router.push(`/product/${item.id}`)}>
-      {item.image_url && (
-        <Image source={{ uri: item.image_url }} style={styles.productImage} resizeMode="cover" />
-      )}
-      <ThemedView style={styles.productInfo}>
-        <ThemedText style={styles.productName}>{item.name}</ThemedText>
-        <ThemedText style={styles.productPrice}>${item.price}</ThemedText>
-        <ThemedView style={styles.shopInfo}>
-          <ThemedText style={styles.shopName}>{item.shop.name}</ThemedText>
-          <ThemedView style={styles.ratingContainer}>
-            <IconSymbol name="star.fill" size={12} color={colors.secondary} />
-            <ThemedText style={styles.rating}>{item.shop.rating.toFixed(1)}</ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+      style={[styles.productCard, { backgroundColor: colors.cardBackground }]}
+      onPress={() => router.push(`/product/${item.id}`)}
+    >
+      <Image
+        source={{ uri: item.image_url }}
+        style={styles.productImage}
+        defaultSource={require('@/assets/images/partial-react-logo.png')}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.02)']}
+        style={styles.productContent}
+      >
+        <ThemedText style={styles.productName} numberOfLines={2}>
+          {item.name}
+        </ThemedText>
+        <ThemedText style={[styles.productPrice, { color: colors.priceRed }]}>
+          ${item.price.toFixed(2)}
+        </ThemedText>
+        
+        <View style={styles.shopInfo}>
+          <View style={styles.ratingContainer}>
+            <IconSymbol name="star.fill" size={14} color={colors.ratingStars} />
+            <ThemedText style={styles.rating}>
+              {item.shop.rating.toFixed(1)}
+            </ThemedText>
+          </View>
+          <ThemedText style={[styles.shopName, { color: colors.textSecondary }]}>
+            {item.shop.name}
+          </ThemedText>
+        </View>
+      </LinearGradient>
     </Pressable>
-  );
+  ), [colors]);
 
   const renderFilters = () => (
-    <ThemedView style={styles.filtersContainer}>
+    <ThemedView style={[styles.filtersContainer, { borderColor: colors.border }]}>
+      {/* Sort Section */}
       <ThemedView style={styles.filterSection}>
         <ThemedText style={styles.filterTitle}>Sort By</ThemedText>
-        <ThemedView style={styles.filterOptions}>
-          {['newest', 'price_asc', 'price_desc', 'rating'].map((option) => (
+        <View style={styles.filterOptions}>
+          {SORT_OPTIONS.map((option) => (
             <Pressable
-              key={option}
+              key={option.id}
               style={[
-                styles.filterOption,
+                styles.filterChip,
                 {
-                  backgroundColor:
-                    filters.sortBy === option ? colors.primary : colors.background,
+                  backgroundColor: filters.sortBy === option.id ? colors.primary : colors.lightGray,
+                  borderColor: colors.border,
                 },
               ]}
-              onPress={() => handleFilter({ sortBy: option as ProductFilter['sortBy'] })}>
+              onPress={() => handleFilter({ sortBy: option.id as ProductFilter['sortBy'] })}
+            >
               <ThemedText
                 style={[
-                  styles.filterOptionText,
-                  { color: filters.sortBy === option ? '#ffffff' : colors.text },
-                ]}>
-                {option.replace('_', ' ').toUpperCase()}
+                  styles.filterChipText,
+                  { color: filters.sortBy === option.id ? '#FFFFFF' : colors.text },
+                ]}
+              >
+                {option.label}
               </ThemedText>
             </Pressable>
           ))}
-        </ThemedView>
+        </View>
       </ThemedView>
 
+      {/* Categories Section */}
       <ThemedView style={styles.filterSection}>
         <ThemedText style={styles.filterTitle}>Categories</ThemedText>
-        <ThemedView style={styles.filterOptions}>
+        <View style={styles.filterOptions}>
           {categories.map((category) => (
             <Pressable
               key={category}
               style={[
-                styles.filterOption,
+                styles.filterChip,
                 {
-                  backgroundColor:
-                    filters.category === category ? colors.primary : colors.background,
+                  backgroundColor: filters.category === category ? colors.primary : colors.lightGray,
+                  borderColor: colors.border,
                 },
               ]}
-              onPress={() =>
-                handleFilter({
-                  category: filters.category === category ? undefined : category,
-                })
-              }>
+              onPress={() => handleFilter({
+                category: filters.category === category ? undefined : category,
+              })}
+            >
               <ThemedText
                 style={[
-                  styles.filterOptionText,
-                  { color: filters.category === category ? '#ffffff' : colors.text },
-                ]}>
+                  styles.filterChipText,
+                  { color: filters.category === category ? '#FFFFFF' : colors.text },
+                ]}
+              >
                 {category}
               </ThemedText>
             </Pressable>
           ))}
-        </ThemedView>
+        </View>
       </ThemedView>
 
+      {/* Additional Filters */}
       <ThemedView style={styles.filterSection}>
-        <ThemedText style={styles.filterTitle}>Other Filters</ThemedText>
-        <ThemedView style={styles.filterOptions}>
+        <ThemedText style={styles.filterTitle}>Additional Filters</ThemedText>
+        <View style={styles.filterOptions}>
           <Pressable
             style={[
-              styles.filterOption,
+              styles.filterChip,
               {
-                backgroundColor: filters.inStock ? colors.primary : colors.background,
+                backgroundColor: filters.inStock ? colors.primary : colors.lightGray,
+                borderColor: colors.border,
               },
             ]}
-            onPress={() => handleFilter({ inStock: !filters.inStock })}>
+            onPress={() => handleFilter({ inStock: !filters.inStock })}
+          >
+            <IconSymbol 
+              name="checkmark.circle.fill" 
+              size={16} 
+              color={filters.inStock ? '#FFFFFF' : colors.icon} 
+            />
             <ThemedText
               style={[
-                styles.filterOptionText,
-                { color: filters.inStock ? '#ffffff' : colors.text },
-              ]}>
-              IN STOCK
+                styles.filterChipText,
+                { color: filters.inStock ? '#FFFFFF' : colors.text },
+              ]}
+            >
+              In Stock Only
             </ThemedText>
           </Pressable>
-        </ThemedView>
+        </View>
       </ThemedView>
+    </ThemedView>
+  );
+
+  const renderHeader = () => (
+    <ThemedView style={styles.header}>
+      <View style={styles.headerContent}>
+        <ThemedText style={styles.searchQuery}>"{q}"</ThemedText>
+        <ThemedText style={[styles.resultCount, { color: colors.textSecondary }]}>
+          {totalCount} results
+        </ThemedText>
+      </View>
+      <Pressable 
+        style={[styles.filterButton, { backgroundColor: colors.lightGray }]}
+        onPress={() => setShowFilters(!showFilters)}
+      >
+        <IconSymbol name="line.3.horizontal.decrease" size={20} color={colors.text} />
+        <ThemedText style={styles.filterButtonText}>Filters</ThemedText>
+        <IconSymbol
+          name={showFilters ? 'chevron.up' : 'chevron.down'}
+          size={16}
+          color={colors.text}
+        />
+      </Pressable>
+    </ThemedView>
+  );
+
+  const renderEmpty = () => (
+    <ThemedView style={styles.emptyContainer}>
+      <IconSymbol 
+        name="magnifyingglass" 
+        size={48} 
+        color={colors.textSecondary} 
+      />
+      <ThemedText style={styles.emptyTitle}>No Results Found</ThemedText>
+      <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
+        We couldn't find any products matching your search. Try adjusting your filters or search terms.
+      </ThemedText>
+      <Pressable
+        style={[styles.browseButton, { backgroundColor: colors.primary }]}
+        onPress={() => router.push('/explore')}
+      >
+        <ThemedText style={styles.browseButtonText}>Browse All Products</ThemedText>
+      </Pressable>
     </ThemedView>
   );
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText style={styles.title}>
-          {totalCount} results for "{q}"
-        </ThemedText>
-        <Pressable onPress={() => setShowFilters(!showFilters)}>
-          <IconSymbol
-            name={showFilters ? 'chevron.up' : 'chevron.down'}
-            size={24}
-            color={colors.icon}
-          />
-        </Pressable>
-      </ThemedView>
-
+      {renderHeader()}
       {showFilters && renderFilters()}
 
       {loading ? (
@@ -175,13 +242,11 @@ export default function SearchScreen() {
           data={products}
           renderItem={renderProduct}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.productList}
-          ListEmptyComponent={
-            <ThemedView style={styles.emptyContainer}>
-              <IconSymbol name="exclamationmark.triangle" size={48} color={colors.icon} />
-              <ThemedText style={styles.emptyText}>No products found</ThemedText>
-            </ThemedView>
-          }
+          numColumns={2}
+          contentContainerStyle={styles.productGrid}
+          columnWrapperStyle={styles.productRow}
+          ListEmptyComponent={renderEmpty()}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </ThemedView>
@@ -196,47 +261,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
-  title: {
-    fontSize: 18,
+  headerContent: {
+    flex: 1,
+    marginRight: 16,
+  },
+  searchQuery: {
+    fontSize: 20,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  resultCount: {
+    fontSize: 14,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  productList: {
-    padding: 15,
+  productGrid: {
+    padding: 12,
+  },
+  productRow: {
+    justifyContent: 'space-between',
   },
   productCard: {
-    flexDirection: 'row',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    width: '48%',
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 2,
   },
   productImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 15,
+    width: '100%',
+    aspectRatio: 1,
   },
-  productInfo: {
-    flex: 1,
+  productContent: {
+    padding: 12,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
+    lineHeight: 20,
   },
   productPrice: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -246,53 +334,75 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   shopName: {
-    fontSize: 14,
-    opacity: 0.7,
+    fontSize: 12,
+    flex: 1,
+    textAlign: 'right',
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   rating: {
-    marginLeft: 4,
     fontSize: 12,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 16,
-    opacity: 0.7,
+    fontWeight: '500',
   },
   filtersContainer: {
-    padding: 15,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   filterSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   filterTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   filterOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  filterOption: {
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
   },
-  filterOptionText: {
-    fontSize: 12,
+  filterChipText: {
+    fontSize: 14,
     fontWeight: '500',
   },
-}); 
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  browseButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  browseButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
