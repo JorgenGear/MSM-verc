@@ -8,6 +8,7 @@ import { SearchHeader } from '@/components/SearchHeader';
 import { useProducts } from '@/hooks/useProducts';
 import { useShops } from '@/hooks/useShops';
 import { useState, useCallback } from 'react';
+import { router } from 'expo-router';
 
 export default function ExploreScreen() {
   const colorScheme = useColorScheme();
