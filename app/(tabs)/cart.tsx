@@ -116,7 +116,7 @@ export default function CartScreen() {
         </ThemedView>
         <Button
           title="Proceed to Checkout"
-          onPress={() => router.replace('/checkout')}  // This is the key change
+          onPress={() => router.push('/checkout')}  // Changed from replace to push and updated the path
           variant="primary"
           size="large"
           fullWidth
