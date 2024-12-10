@@ -1,250 +1,104 @@
-import { StyleSheet, Pressable, Image, View } from 'react-native';
-import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, Image, Pressable, View } from 'react-native';
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
 import { IconSymbol } from './ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useWishlistContext } from '@/providers/WishlistProvider';
-import { Product } from '@/lib/supabase';
-import { useState, useCallback } from 'react';
-import type { GestureResponderEvent } from 'react-native';
+import { router } from 'expo-router';
 
-type Props = {
-  product: Product & {
-    shop?: {
-      name: string;
-      rating: number;
-    };
-  };
-  variant?: 'grid' | 'list';
+export type ProductCardProps = {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string;
+  shop_name: string;
+  category?: string;
+  discount?: number;
 };
 
-export function ProductCard({ product, variant = 'grid' }: Props) {
+export function ProductCard({ id, name, price, image_url, shop_name, category, discount }: ProductCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { isInWishlist, toggleWishlist } = useWishlistContext();
-  const [inWishlist, setInWishlist] = useState(isInWishlist(product.id));
   const [imageError, setImageError] = useState(false);
 
-  const handleWishlist = useCallback(async (e: GestureResponderEvent) => {
-    e.stopPropagation();
-    try {
-      await toggleWishlist(product.id);
-      setInWishlist(!inWishlist);
-    } catch (error) {
-      console.error('Error updating wishlist:', error);
+  const getPlaceholderImage = () => {
+    if (category) {
+      return require(`@/assets/images/categories/${category.toLowerCase()}.jpg`);
     }
-  }, [inWishlist, product.id, toggleWishlist]);
-
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-  }, []);
-
-  if (variant === 'list') {
-    return (
-      <Pressable
-        style={[styles.listCard, { backgroundColor: colors.background }]}
-        onPress={() => router.push(`/product/${product.id}`)}
-      >
-        <View style={styles.listImageContainer}>
-          <Image 
-            source={
-              !imageError && product.image_url
-                ? { uri: product.image_url }
-                : require('@/assets/images/partial-react-logo.png')
-            }
-            style={styles.listImage}
-            onError={handleImageError}
-          />
-          <Pressable 
-            style={[styles.wishlistButton, { backgroundColor: colors.background }]} 
-            onPress={handleWishlist}
-          >
-            <IconSymbol
-              name={inWishlist ? 'heart.fill' : 'heart'}
-              size={20}
-              color={inWishlist ? colors.error : colors.icon}
-            />
-          </Pressable>
-        </View>
-
-        <ThemedView style={styles.listContent}>
-          <ThemedText style={styles.name} numberOfLines={2}>
-            {product.name}
-          </ThemedText>
-          <ThemedText style={styles.price}>${product.price.toFixed(2)}</ThemedText>
-          
-          {product.shop && (
-            <ThemedView style={styles.shopInfo}>
-              <ThemedText style={styles.shopName} numberOfLines={1}>
-                {product.shop.name}
-              </ThemedText>
-              <ThemedView style={styles.rating}>
-                <IconSymbol name="star.fill" size={12} color={colors.ratingStars} />
-                <ThemedText style={styles.ratingText}>
-                  {product.shop.rating.toFixed(1)}
-                </ThemedText>
-              </ThemedView>
-            </ThemedView>
-          )}
-        </ThemedView>
-      </Pressable>
-    );
-  }
+    return require('@/assets/images/placeholders/product-default.jpg');
+  };
 
   return (
     <Pressable
-      style={[styles.gridCard, { backgroundColor: colors.background }]}
-      onPress={() => router.push(`/product/${product.id}`)}
+      style={[styles.container, { backgroundColor: colors.productCardBackground }]}
+      onPress={() => router.push(`/product/${id}`)}
     >
-      <View style={styles.gridImageContainer}>
-        <Image 
-          source={
-            !imageError && product.image_url
-              ? { uri: product.image_url }
-              : require('@/assets/images/partial-react-logo.png')
-          }
-          style={styles.gridImage}
-          onError={handleImageError}
+      <View style={styles.imageContainer}>
+        <Image
+          source={imageError ? getPlaceholderImage() : { uri: image_url }}
+          style={styles.image}
+          onError={() => setImageError(true)}
         />
-        <Pressable 
-          style={[styles.wishlistButton, { backgroundColor: colors.background }]} 
-          onPress={handleWishlist}
-        >
-          <IconSymbol
-            name={inWishlist ? 'heart.fill' : 'heart'}
-            size={20}
-            color={inWishlist ? colors.error : colors.icon}
-          />
-        </Pressable>
+        {discount && discount > 0 && (
+          <View style={[styles.discountBadge, { backgroundColor: colors.saveBadge }]}>
+            <ThemedText style={styles.discountText}>{discount}% OFF</ThemedText>
+          </View>
+        )}
       </View>
 
-      <ThemedView style={styles.gridContent}>
+      <ThemedView style={styles.content}>
         <ThemedText style={styles.name} numberOfLines={2}>
-          {product.name}
+          {name}
         </ThemedText>
-        <ThemedText style={styles.price}>${product.price.toFixed(2)}</ThemedText>
         
-        {product.shop && (
-          <ThemedView style={styles.shopInfo}>
-            <ThemedText style={styles.shopName} numberOfLines={1}>
-              {product.shop.name}
-            </ThemedText>
-            <ThemedView style={styles.rating}>
-              <IconSymbol name="star.fill" size={12} color={colors.ratingStars} />
-              <ThemedText style={styles.ratingText}>
-                {product.shop.rating.toFixed(1)}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        )}
+        <ThemedText style={[styles.price, { color: colors.priceRed }]}>
+          ${price.toFixed(2)}
+        </ThemedText>
 
-        {product.discount && (
-          <ThemedView style={[styles.discountBadge, { backgroundColor: colors.saveBadge }]}>
-            <ThemedText style={styles.discountText}>{product.discount}% OFF</ThemedText>
-          </ThemedView>
-        )}
+        <ThemedText style={[styles.shop, { color: colors.textSecondary }]} numberOfLines={1}>
+          {shop_name}
+        </ThemedText>
       </ThemedView>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  gridCard: {
-    width: '48%',
+  container: {
     borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
-  gridImageContainer: {
+  imageContainer: {
     position: 'relative',
-    width: '100%',
     aspectRatio: 1,
+    width: '100%',
   },
-  gridImage: {
+  image: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  gridContent: {
-    padding: 12,
-  },
-  listCard: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  listImageContainer: {
-    position: 'relative',
-    width: 120,
-    height: 120,
-  },
-  listImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  listContent: {
-    flex: 1,
+  content: {
     padding: 12,
   },
   name: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
-    lineHeight: 20,
   },
   price: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#B12704', // Amazon-style price color
+    marginBottom: 4,
   },
-  shopInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  shopName: {
-    fontSize: 12,
-    opacity: 0.7,
-    flex: 1,
-    marginRight: 8,
-  },
-  rating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-  },
-  wishlistButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+  shop: {
+    fontSize: 14,
   },
   discountBadge: {
     position: 'absolute',

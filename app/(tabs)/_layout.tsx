@@ -1,12 +1,7 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
+import { Tabs, Stack } from 'expo-router';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -16,53 +11,27 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: colors.headerBackground,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.divider,
-          height: Platform.OS === 'ios' ? 96 : 64, // Adjusted for iOS notch
-        },
-        headerTitleStyle: {
-          color: '#FFFFFF',
-          fontSize: 18,
-          fontWeight: '600',
-          fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
-        },
-        headerTitleAlign: 'center',
-        headerTintColor: '#FFFFFF',
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
+        tabBarInactiveTintColor: colors.mediumGray,
         tabBarStyle: {
-          backgroundColor: colors.surfaceBackground,
-          borderTopColor: colors.divider,
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64, // Adjusted for iPhone home indicator
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          height: 60,
+          paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-          fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: colors.background,
         },
-        tabBarIconStyle: {
-          marginBottom: -4, // Tighten up space between icon and label
-        },
-      }}>
+        headerTintColor: colors.text,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          headerTitle: 'MainStreet Markets',
           tabBarIcon: ({ color, size }) => (
-            <IconSymbol 
-              size={size} 
-              name="house.fill" 
-              color={color} 
-            />
+            <IconSymbol name="house" size={size} color={color} />
           ),
         }}
       />
@@ -70,13 +39,8 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Browse',
-          headerTitle: 'Browse Local Shops',
           tabBarIcon: ({ color, size }) => (
-            <IconSymbol 
-              size={size} 
-              name="list.bullet" 
-              color={color}
-            />
+            <IconSymbol name="magnifyingglass" size={size} color={color} />
           ),
         }}
       />
@@ -84,13 +48,8 @@ export default function TabLayout() {
         name="cart"
         options={{
           title: 'Cart',
-          headerTitle: 'Shopping Cart',
           tabBarIcon: ({ color, size }) => (
-            <IconSymbol 
-              size={size} 
-              name="cart.fill" 
-              color={color}
-            />
+            <IconSymbol name="cart" size={size} color={color} />
           ),
         }}
       />
@@ -98,23 +57,59 @@ export default function TabLayout() {
         name="account"
         options={{
           title: 'Account',
-          headerTitle: 'Your Account',
           tabBarIcon: ({ color, size }) => (
-            <IconSymbol 
-              size={size} 
-              name="person.fill" 
-              color={color}
-            />
+            <IconSymbol name="person" size={size} color={color} />
           ),
-          headerRight: () => (
-            <IconSymbol
-              name="gear"
-              size={24}
-              color="#FFFFFF"
-              style={{ marginRight: 16 }}
-              onPress={() => router.push('/settings')}
-            />
-          ),
+        }}
+      />
+      {/* Hidden tabs for nested screens */}
+      <Tabs.Screen
+        name="orders"
+        options={{
+          href: null, // This makes the tab not show in the bar
+          title: 'My Orders',
+        }}
+      />
+      <Tabs.Screen
+        name="addresses"
+        options={{
+          href: null,
+          title: 'Saved Addresses',
+        }}
+      />
+      <Tabs.Screen
+        name="payment-methods"
+        options={{
+          href: null,
+          title: 'Payment Methods',
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+          title: 'Notifications',
+        }}
+      />
+      <Tabs.Screen
+        name="support"
+        options={{
+          href: null,
+          title: 'Help & Support',
+        }}
+      />
+      <Tabs.Screen
+        name="daily-deals"
+        options={{
+          href: null,
+          title: 'Daily Deals',
+        }}
+      />
+      <Tabs.Screen
+        name="product/[id]"
+        options={{
+          href: null,
+          title: 'Product Details',
         }}
       />
     </Tabs>

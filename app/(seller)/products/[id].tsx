@@ -85,11 +85,30 @@ export default function ProductForm() {
         aspect: [1, 1],
         quality: 0.8,
         base64: true,
+        exif: true,
       });
 
       if (!result.canceled && result.assets[0].base64) {
         setLoading(true);
         const base64FileData = result.assets[0].base64;
+        
+        // Image validation
+        const image = new Image();
+        image.src = `data:image/jpeg;base64,${base64FileData}`;
+        
+        // Check image dimensions
+        if (image.width < 500 || image.height < 500) {
+          alert('Please upload a larger image (minimum 500x500 pixels)');
+          return;
+        }
+
+        // Check file size (max 5MB)
+        const sizeInMB = (base64FileData.length * 0.75) / 1024 / 1024;
+        if (sizeInMB > 5) {
+          alert('Image size should be less than 5MB');
+          return;
+        }
+
         const fileName = `${Date.now()}.jpg`;
         const filePath = `product-images/${fileName}`;
 
@@ -98,6 +117,8 @@ export default function ProductForm() {
           .from('products')
           .upload(filePath, decode(base64FileData), {
             contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
           });
 
         if (uploadError) throw uploadError;

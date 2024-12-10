@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
@@ -19,23 +19,28 @@ export function useCart() {
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
 
-  useEffect(() => {
-    loadCart();
-  }, [session?.user?.id]);
-
-  const loadCart = async () => {
+  const loadCart = useCallback(async () => {
     try {
       setLoading(true);
       const cartData = await AsyncStorage.getItem(`cart_${session?.user?.id || 'guest'}`);
       if (cartData) {
-        setItems(JSON.parse(cartData));
+        const parsedData = JSON.parse(cartData);
+        setItems(parsedData);
+      } else {
+        setItems([]);
       }
     } catch (error) {
       console.error('Error loading cart:', error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
+
+  // Load cart immediately when component mounts or user changes
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
 
   const saveCart = async (newItems: CartItem[]) => {
     try {
@@ -51,6 +56,7 @@ export function useCart() {
 
   const addItem = async (productId: string, quantity: number = 1) => {
     try {
+      setLoading(true);
       // Get product details
       const { data: product, error } = await supabase
         .from('products')
@@ -93,11 +99,15 @@ export function useCart() {
       await saveCart(newItems);
     } catch (error) {
       console.error('Error adding item to cart:', error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
     try {
+      setLoading(true);
       if (quantity < 1) {
         await removeItem(itemId);
         return;
@@ -106,43 +116,55 @@ export function useCart() {
       const newItems = items.map(item =>
         item.id === itemId ? { ...item, quantity } : item
       );
-      setItems(newItems);
-
-      await AsyncStorage.setItem(
-        `cart_${session?.user?.id || 'guest'}`,
-        JSON.stringify(newItems)
-      );
+      await saveCart(newItems);
     } catch (error) {
       console.error('Error updating quantity:', error);
       await loadCart();
+    } finally {
+      setLoading(false);
     }
   };
 
   const removeItem = async (itemId: string) => {
-    const newItems = items.filter(item => item.id !== itemId);
-    await saveCart(newItems);
+    try {
+      setLoading(true);
+      const newItems = items.filter(item => item.id !== itemId);
+      await saveCart(newItems);
+    } catch (error) {
+      console.error('Error removing item:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clearCart = async () => {
-    await saveCart([]);
+    try {
+      setLoading(true);
+      await saveCart([]);
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getSubtotal = () => {
+  const getSubtotal = useCallback(() => {
     return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  };
+  }, [items]);
 
-  const getItemCount = () => {
+  const getItemCount = useCallback(() => {
     return items.reduce((sum, item) => sum + item.quantity, 0);
-  };
+  }, [items]);
 
-  const getShopItems = (shopId: string) => {
+  const getShopItems = useCallback((shopId: string) => {
     return items.filter(item => item.shop_id === shopId);
-  };
+  }, [items]);
 
   const mergeGuestCart = async () => {
     if (!session?.user?.id) return;
 
     try {
+      setLoading(true);
       const guestCartData = await AsyncStorage.getItem('cart_guest');
       if (guestCartData) {
         const guestItems = JSON.parse(guestCartData);
@@ -152,6 +174,8 @@ export function useCart() {
       }
     } catch (error) {
       console.error('Error merging guest cart:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,5 +190,6 @@ export function useCart() {
     getItemCount,
     getShopItems,
     mergeGuestCart,
+    loadCart,
   };
 } 

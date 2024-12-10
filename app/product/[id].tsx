@@ -11,6 +11,7 @@ import { useWishlistContext } from '@/providers/WishlistProvider';
 import { useProductDetails } from '@/hooks/useProductDetails';
 import { ProductReviews } from '@/components/ProductReviews';
 import { LinearGradient } from 'expo-linear-gradient';
+import { AddToCartModal } from '@/components/AddToCartModal';
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams();
@@ -29,6 +30,7 @@ export default function ProductScreen() {
   const { isInWishlist, toggleWishlist } = useWishlistContext();
   const [quantity, setQuantity] = useState(1);
   const [inWishlist, setInWishlist] = useState(false);
+  const [showAddToCartModal, setShowAddToCartModal] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -39,7 +41,7 @@ export default function ProductScreen() {
   const handleAddToCart = async () => {
     try {
       await addItem(product.id, quantity);
-      alert('Product added to cart!');
+      setShowAddToCartModal(true);
     } catch (error) {
       console.error('Error adding to cart:', error);
       alert('Error adding to cart. Please try again.');
@@ -76,196 +78,204 @@ export default function ProductScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Product Image */}
-      <View style={styles.imageContainer}>
-        {product.image_url && (
-          <Image 
-            source={{ uri: product.image_url }} 
-            style={styles.image} 
-            resizeMode="cover"
-          />
-        )}
-        {product.discount > 0 && (
-          <View style={[styles.discountBadge, { backgroundColor: colors.saveBadge }]}>
-            <ThemedText style={styles.discountText}>
-              {product.discount}% OFF
-            </ThemedText>
-          </View>
-        )}
-      </View>
-
-      <ThemedView style={styles.content}>
-        {/* Product Header */}
-        <ThemedView style={styles.header}>
-          <ThemedView style={styles.titleContainer}>
-            <ThemedText style={styles.name}>{product.name}</ThemedText>
-            <View style={styles.priceContainer}>
-              <ThemedText style={[styles.price, { color: colors.priceRed }]}>
-                ${product.price}
-              </ThemedText>
-              {product.discount > 0 && (
-                <ThemedText style={styles.originalPrice}>
-                  ${(product.price / (1 - product.discount / 100)).toFixed(2)}
-                </ThemedText>
-              )}
-            </View>
-          </ThemedView>
-          <Pressable 
-            style={styles.wishlistButton} 
-            onPress={handleToggleWishlist}
-          >
-            <IconSymbol
-              name={inWishlist ? 'heart.fill' : 'heart'}
-              size={24}
-              color={inWishlist ? colors.error : colors.icon}
+    <>
+      <ScrollView style={styles.container}>
+        {/* Product Image */}
+        <View style={styles.imageContainer}>
+          {product.image_url && (
+            <Image 
+              source={{ uri: product.image_url }} 
+              style={styles.image} 
+              resizeMode="cover"
             />
-          </Pressable>
-        </ThemedView>
+          )}
+          {product.discount > 0 && (
+            <View style={[styles.discountBadge, { backgroundColor: colors.saveBadge }]}>
+              <ThemedText style={styles.discountText}>
+                {product.discount}% OFF
+              </ThemedText>
+            </View>
+          )}
+        </View>
 
-        {/* Shop Info */}
-        <Pressable
-          style={[styles.shopContainer, { backgroundColor: colors.cardBackground }]}
-          onPress={() => router.push(`/shop/${product.shop.id}`)}
-        >
-          <ThemedView style={styles.shopInfo}>
-            <ThemedText style={styles.shopName}>{product.shop.name}</ThemedText>
-            <ThemedView style={styles.ratingContainer}>
-              <IconSymbol name="star.fill" size={16} color={colors.ratingStars} />
-              <ThemedText style={styles.rating}>{product.shop.rating.toFixed(1)}</ThemedText>
+        <ThemedView style={styles.content}>
+          {/* Product Header */}
+          <ThemedView style={styles.header}>
+            <ThemedView style={styles.titleContainer}>
+              <ThemedText style={styles.name}>{product.name}</ThemedText>
+              <View style={styles.priceContainer}>
+                <ThemedText style={[styles.price, { color: colors.priceRed }]}>
+                  ${product.price}
+                </ThemedText>
+                {product.discount > 0 && (
+                  <ThemedText style={styles.originalPrice}>
+                    ${(product.price / (1 - product.discount / 100)).toFixed(2)}
+                  </ThemedText>
+                )}
+              </View>
+            </ThemedView>
+            <Pressable 
+              style={styles.wishlistButton} 
+              onPress={handleToggleWishlist}
+            >
+              <IconSymbol
+                name={inWishlist ? 'heart.fill' : 'heart'}
+                size={24}
+                color={inWishlist ? colors.error : colors.icon}
+              />
+            </Pressable>
+          </ThemedView>
+
+          {/* Shop Info */}
+          <Pressable
+            style={[styles.shopContainer, { backgroundColor: colors.cardBackground }]}
+            onPress={() => router.push(`/shop/${product.shop.id}`)}
+          >
+            <ThemedView style={styles.shopInfo}>
+              <ThemedText style={styles.shopName}>{product.shop.name}</ThemedText>
+              <ThemedView style={styles.ratingContainer}>
+                <IconSymbol name="star.fill" size={16} color={colors.ratingStars} />
+                <ThemedText style={styles.rating}>{product.shop.rating.toFixed(1)}</ThemedText>
+              </ThemedView>
+            </ThemedView>
+            <View style={styles.shopFooter}>
+              <ThemedText style={[styles.location, { color: colors.textSecondary }]}>
+                {product.shop.location}
+              </ThemedText>
+              <ThemedText style={[styles.viewShop, { color: colors.primary }]}>
+                View Shop
+              </ThemedText>
+            </View>
+          </Pressable>
+
+          {/* Product Description */}
+          <ThemedView style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>Description</ThemedText>
+            <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
+              {product.description}
+            </ThemedText>
+          </ThemedView>
+
+          {/* Quantity Selector */}
+          <ThemedView style={styles.quantityContainer}>
+            <ThemedText style={styles.label}>Quantity:</ThemedText>
+            <ThemedView style={styles.quantityControls}>
+              <Pressable
+                style={[
+                  styles.quantityButton,
+                  { 
+                    backgroundColor: colors.background,
+                    borderWidth: 1,
+                    borderColor: colors.border
+                  }
+                ]}
+                onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+              >
+                <ThemedText style={[
+                  styles.quantityButtonText,
+                  { color: quantity > 1 ? colors.text : colors.textSecondary }
+                ]}>
+                  -
+                </ThemedText>
+              </Pressable>
+              
+              <ThemedText style={styles.quantity}>{quantity}</ThemedText>
+              
+              <Pressable
+                style={[
+                  styles.quantityButton,
+                  { 
+                    backgroundColor: colors.background,
+                    borderWidth: 1,
+                    borderColor: colors.border
+                  }
+                ]}
+                onPress={() => quantity < (product.stock || 99) && setQuantity(quantity + 1)}
+              >
+                <ThemedText style={[
+                  styles.quantityButtonText,
+                  { color: quantity < (product.stock || 99) ? colors.text : colors.textSecondary }
+                ]}>
+                  +
+                </ThemedText>
+              </Pressable>
             </ThemedView>
           </ThemedView>
-          <View style={styles.shopFooter}>
-            <ThemedText style={[styles.location, { color: colors.textSecondary }]}>
-              {product.shop.location}
-            </ThemedText>
-            <ThemedText style={[styles.viewShop, { color: colors.primary }]}>
-              View Shop
-            </ThemedText>
-          </View>
-        </Pressable>
 
-        {/* Product Description */}
-        <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Description</ThemedText>
-          <ThemedText style={[styles.description, { color: colors.textSecondary }]}>
-            {product.description}
-          </ThemedText>
+          {/* Add to Cart Button */}
+          <Pressable
+            style={[
+              styles.addButton, 
+              { 
+                backgroundColor: colors.primary,
+                opacity: product.stock === 0 ? 0.5 : 1,
+              }
+            ]}
+            onPress={handleAddToCart}
+            disabled={product.stock === 0}
+          >
+            <IconSymbol name="cart.badge.plus" size={24} color="#FFFFFF" />
+            <ThemedText style={styles.addButtonText}>
+              Add to Cart
+            </ThemedText>
+          </Pressable>
+
+          {/* Reviews Section */}
+          <ProductReviews
+            reviews={product.reviews}
+            averageRating={getAverageRating()}
+            ratingCounts={getRatingCounts()}
+            onAddReview={addReview}
+          />
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <ThemedView style={styles.section}>
+              <ThemedText style={styles.sectionTitle}>Related Products</ThemedText>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.relatedProductsScroll}
+              >
+                {relatedProducts.map((relatedProduct) => (
+                  <Pressable
+                    key={relatedProduct.id}
+                    style={[styles.relatedCard, { backgroundColor: colors.cardBackground }]}
+                    onPress={() => router.push(`/product/${relatedProduct.id}`)}
+                  >
+                    {relatedProduct.image_url && (
+                      <Image
+                        source={{ uri: relatedProduct.image_url }}
+                        style={styles.relatedImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <ThemedView style={styles.relatedInfo}>
+                      <ThemedText 
+                        style={styles.relatedName} 
+                        numberOfLines={2}
+                      >
+                        {relatedProduct.name}
+                      </ThemedText>
+                      <ThemedText style={[styles.relatedPrice, { color: colors.priceRed }]}>
+                        ${relatedProduct.price}
+                      </ThemedText>
+                    </ThemedView>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </ThemedView>
+          )}
         </ThemedView>
+      </ScrollView>
 
-        {/* Quantity Selector */}
-        {/* Quantity Selector */}
-<ThemedView style={styles.quantityContainer}>
-  <ThemedText style={styles.label}>Quantity:</ThemedText>
-  <ThemedView style={styles.quantityControls}>
-    <Pressable
-      style={[
-        styles.quantityButton,
-        { 
-          backgroundColor: colors.background,
-          borderWidth: 1,
-          borderColor: colors.border
-        }
-      ]}
-      onPress={() => quantity > 1 && setQuantity(quantity - 1)}
-    >
-      <ThemedText style={[
-        styles.quantityButtonText,
-        { color: quantity > 1 ? colors.text : colors.textSecondary }
-      ]}>
-        -
-      </ThemedText>
-    </Pressable>
-    
-    <ThemedText style={styles.quantity}>{quantity}</ThemedText>
-    
-    <Pressable
-      style={[
-        styles.quantityButton,
-        { 
-          backgroundColor: colors.background,
-          borderWidth: 1,
-          borderColor: colors.border
-        }
-      ]}
-      onPress={() => quantity < (product.stock || 99) && setQuantity(quantity + 1)}
-    >
-      <ThemedText style={[
-        styles.quantityButtonText,
-        { color: quantity < (product.stock || 99) ? colors.text : colors.textSecondary }
-      ]}>
-        +
-      </ThemedText>
-    </Pressable>
-  </ThemedView>
-</ThemedView>
-
-        {/* Add to Cart Button */}
-        <Pressable
-          style={[
-            styles.addButton, 
-            { 
-              backgroundColor: colors.primary,
-              opacity: product.stock === 0 ? 0.5 : 1,
-            }
-          ]}
-          onPress={handleAddToCart}
-          disabled={product.stock === 0}
-        >
-          <IconSymbol name="cart.badge.plus" size={24} color="#FFFFFF" />
-          <ThemedText style={styles.addButtonText}>
-            Add to Cart
-          </ThemedText>
-        </Pressable>
-
-        {/* Reviews Section */}
-        <ProductReviews
-          reviews={product.reviews}
-          averageRating={getAverageRating()}
-          ratingCounts={getRatingCounts()}
-          onAddReview={addReview}
-        />
-
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <ThemedView style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>Related Products</ThemedText>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.relatedProductsScroll}
-            >
-              {relatedProducts.map((relatedProduct) => (
-                <Pressable
-                  key={relatedProduct.id}
-                  style={[styles.relatedCard, { backgroundColor: colors.cardBackground }]}
-                  onPress={() => router.push(`/product/${relatedProduct.id}`)}
-                >
-                  {relatedProduct.image_url && (
-                    <Image
-                      source={{ uri: relatedProduct.image_url }}
-                      style={styles.relatedImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                  <ThemedView style={styles.relatedInfo}>
-                    <ThemedText 
-                      style={styles.relatedName} 
-                      numberOfLines={2}
-                    >
-                      {relatedProduct.name}
-                    </ThemedText>
-                    <ThemedText style={[styles.relatedPrice, { color: colors.priceRed }]}>
-                      ${relatedProduct.price}
-                    </ThemedText>
-                  </ThemedView>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </ThemedView>
-        )}
-      </ThemedView>
-    </ScrollView>
+      <AddToCartModal
+        visible={showAddToCartModal}
+        onClose={() => setShowAddToCartModal(false)}
+        productName={product?.name || ''}
+        productImage={product?.image_url || ''}
+      />
+    </>
   );
 }
 

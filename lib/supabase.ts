@@ -68,17 +68,24 @@ export interface Shop {
   created_at: string;
 }
 
-export interface Product {
+export type Product = {
   id: string;
-  shop_id: string;
   name: string;
   description: string;
   price: number;
+  image_url: string;
   category: string;
-  image_url?: string;
   stock: number;
   created_at: string;
-}
+  shop_id: string;
+  discount: number;
+  shop?: {
+    id: string;
+    name: string;
+    rating: number;
+    location: string;
+  };
+};
 
 export interface Order {
   id: string;
