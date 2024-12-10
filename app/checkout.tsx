@@ -1,317 +1,300 @@
-import React, { useState } from 'react';
-import { StyleSheet, ScrollView, Pressable, ActivityIndicator, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
+import { StyleSheet, ScrollView, View, Pressable, TextInput, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useCartContext } from '@/providers/CartProvider';
-import { useAuth } from '@/providers/AuthProvider';
-import { LinearGradient } from 'expo-linear-gradient';
-
-type CheckoutStep = 'shipping' | 'payment' | 'review';
+import { supabase } from '@/lib/supabase';
 
 export default function CheckoutScreen() {
-  const { type, amount, design } = useLocalSearchParams(); // For gift cards
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { items, getSubtotal, getTax, getTotal, clearCart } = useCartContext();
-  const { session } = useAuth();
-  const [currentStep, setCurrentStep] = useState<CheckoutStep>('shipping');
+  const { user } = useAuth();
+  const { items, getSubtotal, clearCart } = useCartContext();
   const [loading, setLoading] = useState(false);
-  const [shippingAddress, setShippingAddress] = useState({
-    fullName: '',
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    phone: '',
+
+  const [cardDetails, setCardDetails] = useState({
+    number: '',
+    expiry: '',
+    cvc: '',
+    name: ''
   });
 
-  const handlePayment = async () => {
+  // Calculate total with Utah tax rate
+  const subtotal = getSubtotal();
+  const tax = subtotal * 0.0895; // 8.95% tax rate
+  const total = subtotal + tax;
+
+  const formatCardNumber = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    const formatted = cleaned.replace(/(\d{4})/g, '$1 ').trim();
+    return formatted.slice(0, 19);
+  };
+
+  const formatExpiry = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    if (cleaned.length >= 2) {
+      return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
+    }
+    return cleaned;
+  };
+
+  const handleCardNumberChange = (text: string) => {
+    const formatted = formatCardNumber(text);
+    setCardDetails(prev => ({ ...prev, number: formatted }));
+  };
+
+  const handleExpiryChange = (text: string) => {
+    const formatted = formatExpiry(text);
+    setCardDetails(prev => ({ ...prev, expiry: formatted }));
+  };
+
+const handleSubmitOrder = async () => {
+    if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc || !cardDetails.name) {
+      Alert.alert('Error', 'Please fill in all card details');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      setLoading(true);
-      // Stripe integration will go here
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated payment
+      // Create order in Supabase
+      const orderData = {
+        user_id: user?.id,
+        total_amount: total,
+        subtotal: subtotal,
+        tax: tax,
+        items: items,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        payment_method: 'card',
+        card_last4: cardDetails.number.slice(-4)
+      };
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Clear cart after successful order
+      await clearCart();
+
+      // Navigate to success page
+      router.replace('/checkout/success');
       
-      // Clear cart and navigate to success
-      clearCart();
-      router.push('/checkout/success');
     } catch (error) {
-      console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      Alert.alert('Error', 'Failed to process order. Please try again.');
+      console.error('Order error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderOrderSummary = () => (
-    <ThemedView style={[styles.summaryCard, { backgroundColor: colors.cardBackground }]}>
-      <ThemedText style={styles.summaryTitle}>Order Summary</ThemedText>
-      
-      {items.map(item => (
-        <ThemedView key={item.id} style={styles.summaryItem}>
-          <ThemedView style={styles.summaryItemInfo}>
-            <ThemedText numberOfLines={1} style={styles.summaryItemName}>
-              {item.name}
-            </ThemedText>
-            <ThemedText style={[styles.summaryItemQty, { color: colors.textSecondary }]}>
-              Qty: {item.quantity}
-            </ThemedText>
-          </ThemedView>
-          <ThemedText style={styles.summaryItemPrice}>
-            ${(item.price * item.quantity).toFixed(2)}
-          </ThemedText>
-        </ThemedView>
-      ))}
-
-      <View style={styles.divider} />
-
-      <ThemedView style={styles.summaryRow}>
-        <ThemedText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-          Subtotal
-        </ThemedText>
-        <ThemedText style={styles.summaryValue}>${getSubtotal().toFixed(2)}</ThemedText>
-      </ThemedView>
-
-      <ThemedView style={styles.summaryRow}>
-        <ThemedText style={[styles.summaryLabel, { color: colors.textSecondary }]}>
-          Tax
-        </ThemedText>
-        <ThemedText style={styles.summaryValue}>${getTax().toFixed(2)}</ThemedText>
-      </ThemedView>
-
-      <ThemedView style={[styles.summaryRow, styles.totalRow]}>
-        <ThemedText style={styles.totalLabel}>Total</ThemedText>
-        <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
-          ${getTotal().toFixed(2)}
-        </ThemedText>
-      </ThemedView>
-    </ThemedView>
-  );
-
-  const renderShippingStep = () => (
-    <ThemedView style={styles.formContainer}>
-      <ThemedText style={styles.sectionTitle}>Shipping Address</ThemedText>
-      {/* We'll add the form later */}
-      <ThemedText style={[styles.placeholder, { color: colors.textSecondary }]}>
-        Shipping form coming soon
-      </ThemedText>
-    </ThemedView>
-  );
-  
-  const renderPaymentStep = () => (
-    <ThemedView style={styles.formContainer}>
-      <ThemedText style={styles.sectionTitle}>Payment Method</ThemedText>
-      {/* We'll add Stripe Elements later */}
-      <ThemedText style={[styles.placeholder, { color: colors.textSecondary }]}>
-        Payment form coming soon
-      </ThemedText>
-    </ThemedView>
-  );
-  
-  const renderReviewStep = () => (
-    <ThemedView style={styles.formContainer}>
-      <ThemedText style={styles.sectionTitle}>Review Order</ThemedText>
-      {/* We'll add order review later */}
-      <ThemedText style={[styles.placeholder, { color: colors.textSecondary }]}>
-        Order review coming soon
-      </ThemedText>
-    </ThemedView>
-  );
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Progress Indicator */}
-        <ThemedView style={styles.progressContainer}>
-          {['shipping', 'payment', 'review'].map((step, index) => (
-            <React.Fragment key={step}>
-              <ThemedView 
-                style={[
-                  styles.progressStep,
-                  { 
-                    backgroundColor: 
-                      currentStep === step ? colors.primary : 
-                      index < ['shipping', 'payment', 'review'].indexOf(currentStep) 
-                        ? colors.success 
-                        : colors.lightGray 
-                  }
-                ]}
-              >
-                <ThemedText style={[styles.stepNumber, { color: '#FFFFFF' }]}>
-                  {index + 1}
-                </ThemedText>
-              </ThemedView>
-              {index < 2 && (
-                <View 
-                  style={[
-                    styles.progressLine,
-                    { 
-                      backgroundColor: 
-                        index < ['shipping', 'payment', 'review'].indexOf(currentStep) 
-                          ? colors.success 
-                          : colors.lightGray 
-                    }
-                  ]} 
-                />
-              )}
-            </React.Fragment>
-          ))}
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <ThemedView style={[styles.header, { backgroundColor: colors.headerBackground }]}>
+        <ThemedText style={styles.headerTitle}>Checkout</ThemedText>
+      </ThemedView>
+
+      <ThemedView style={styles.content}>
+        {/* Order Summary */}
+        <ThemedView style={[styles.section, { backgroundColor: colors.productCardBackground }]}>
+          <ThemedText style={styles.sectionTitle}>Order Summary</ThemedText>
+          <View style={styles.summaryRow}>
+            <ThemedText>Subtotal:</ThemedText>
+            <ThemedText>${subtotal.toFixed(2)}</ThemedText>
+          </View>
+          <View style={styles.summaryRow}>
+            <ThemedText>Tax (8.95%):</ThemedText>
+            <ThemedText>${tax.toFixed(2)}</ThemedText>
+          </View>
+          <View style={[styles.summaryRow, styles.totalRow]}>
+            <ThemedText style={styles.totalText}>Total Amount:</ThemedText>
+            <ThemedText style={styles.totalAmount}>${total.toFixed(2)}</ThemedText>
+          </View>
         </ThemedView>
 
-        {/* Current Step Content */}
-        {currentStep === 'shipping' && renderShippingStep()}
-        {currentStep === 'payment' && renderPaymentStep()}
-        {currentStep === 'review' && renderReviewStep()}
+        {/* Payment Details */}
+        <ThemedView style={[styles.section, { backgroundColor: colors.productCardBackground }]}>
+          <ThemedText style={styles.sectionTitle}>Payment Details</ThemedText>
+          
+          <View style={styles.inputGroup}>
+            <ThemedText style={styles.inputLabel}>Card Number</ThemedText>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.inputBackground }]}
+              value={cardDetails.number}
+              onChangeText={handleCardNumberChange}
+              placeholder="1234 5678 9012 3456"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric"
+              maxLength={19}
+            />
+          </View>
 
-        {/* Order Summary */}
-        {renderOrderSummary()}
-      </ScrollView>
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText style={styles.inputLabel}>Expiry</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.inputBackground }]}
+                value={cardDetails.expiry}
+                onChangeText={handleExpiryChange}
+                placeholder="MM/YY"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="numeric"
+                maxLength={5}
+              />
+            </View>
 
-      {/* Bottom Action Button */}
-      <ThemedView style={styles.bottomBar}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <ThemedText style={styles.inputLabel}>CVC</ThemedText>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.inputBackground }]}
+                value={cardDetails.cvc}
+                onChangeText={text => setCardDetails(prev => ({ ...prev, cvc: text.replace(/\D/g, '') }))}
+                placeholder="123"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="numeric"
+                maxLength={3}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={styles.inputLabel}>Cardholder Name</ThemedText>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.inputBackground }]}
+              value={cardDetails.name}
+              onChangeText={text => setCardDetails(prev => ({ ...prev, name: text }))}
+              placeholder="Name on card"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="words"
+            />
+          </View>
+        </ThemedView>
+
+        {/* Place Order Button */}
         <Pressable
-          style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={currentStep === 'review' ? handlePayment : () => {
-            const steps: CheckoutStep[] = ['shipping', 'payment', 'review'];
-            const currentIndex = steps.indexOf(currentStep);
-            if (currentIndex < steps.length - 1) {
-              setCurrentStep(steps[currentIndex + 1]);
-            }
-          }}
+          style={[
+            styles.orderButton,
+            { backgroundColor: colors.primary },
+            loading && styles.buttonDisabled
+          ]}
+          onPress={handleSubmitOrder}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <ThemedText style={styles.actionButtonText}>
-              {currentStep === 'review' ? 'Place Order' : 'Continue'}
-            </ThemedText>
-          )}
+          <ThemedText style={styles.orderButtonText}>
+            {loading ? 'Processing...' : 'Place Order'}
+          </ThemedText>
         </Pressable>
+
+        
       </ThemedView>
-    </ThemedView>
+    </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  header: {
     padding: 20,
-  },
-  progressStep: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  stepNumber: {
-    fontSize: 14,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: '600',
+    color: '#fff',
   },
-  progressLine: {
-    flex: 1,
-    height: 2,
-    marginHorizontal: 8,
+  content: {
+    padding: 16,
+    gap: 16,
   },
-  summaryCard: {
-    margin: 16,
+  section: {
     padding: 16,
     borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    marginBottom: 8,
   },
-  summaryTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  summaryItemInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  summaryItemName: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  summaryItemQty: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  summaryItemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    marginVertical: 16,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
-  },
-  summaryLabel: {
-    fontSize: 14,
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '500',
+    paddingVertical: 4,
   },
   totalRow: {
-    marginTop: 8,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  bottomBar: {
-    padding: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.1)',
+    marginTop: 8,
+    paddingTop: 12,
   },
-  actionButton: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
+  totalText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  formContainer: {
-    padding: 16,
-  },
-  sectionTitle: {
+  totalAmount: {
     fontSize: 20,
     fontWeight: '600',
+  },
+  inputGroup: {
     marginBottom: 16,
   },
-  placeholder: {
+  inputLabel: {
     fontSize: 14,
-    textAlign: 'center',
-    padding: 32,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  orderButton: {
+    height: 56,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  orderButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  securityNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  securityText: {
+    fontSize: 12,
+    flex: 1,
   },
 });
