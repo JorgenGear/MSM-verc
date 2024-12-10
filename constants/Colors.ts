@@ -16,40 +16,29 @@ const OFF_WHITE = '#F9F9F9';      // Clean, crisp background
 const LIGHT_SAGE = '#F3F8F3';     // Very light sage for cards
 const NEUTRAL_GRAY = '#6B7280';   // Balanced gray for text
 
-type ColorScheme = {
+export type ColorScheme = {
   text: string;
+  textSecondary: string;
   background: string;
-  tint: string;
-  icon: string;
-  tabIconDefault: string;
-  tabIconSelected: string;
   primary: string;
   secondary: string;
-  accent: string;
+  tint: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
+  error: string;
   success: string;
   warning: string;
-  error: string;
-  border: string;
-  searchBar: string;
-  cardBackground: string;
   link: string;
-  ratingStars: string;
+  border: string;
+  cardBackground: string;
+  icon: string;
   priceRed: string;
-  dealGreen: string;
   saveBadge: string;
+  ratingStars: string;
   lightGray: string;
   mediumGray: string;
-  headerBackground: string;
-  footerBackground: string;
-  surfaceBackground: string;
-  divider: string;
-  inputBackground: string;
-  buttonHover: string;
-  navBackground: string;
-  tagBackground: string;
-  productCardBackground: string;
   categoryButtonBackground: string;
-  categoryButtonText: string;
+  productCardBackground: string;
 };
 
 export type ColorSchemes = {

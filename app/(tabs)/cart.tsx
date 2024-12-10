@@ -1,4 +1,5 @@
-import { StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import React from 'react';
+import { StyleSheet, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
@@ -8,28 +9,35 @@ import { useCartContext } from '@/providers/CartProvider';
 import { router } from 'expo-router';
 import { AnimatedTransition } from '@/components/AnimatedTransition';
 import { Button } from '@/components/ui/Button';
-import * as React from 'react';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function CartScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { items, loading, updateQuantity, removeItem, getSubtotal } = useCartContext();
+  const { session } = useAuth();
+
+  const handleCheckout = () => {
+    if (!session?.user) {
+      router.push('/(auth)/login');
+      return;
+    }
+    router.push('/checkout');
+  };
 
   React.useEffect(() => {
-    console.log('Cart items updated:', items?.length);
-  }, [items]);
+    console.log('Cart items:', items?.length, 'Loading:', loading);
+  }, [items, loading]);
 
   if (loading) {
     return (
       <ThemedView style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
-        <AnimatedTransition type="fadeIn">
-          {/* Add your loading indicator here if desired */}
-        </AnimatedTransition>
+        <ActivityIndicator size="large" color={colors.primary} />
       </ThemedView>
     );
   }
 
-  if (!items.length) {
+  if (!items?.length) {
     return (
       <ThemedView style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
         <AnimatedTransition type="fadeInSlide" delay={300}>
@@ -50,7 +58,7 @@ export default function CartScreen() {
   }
 
   return (
-    <ThemedView key={items.length} style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scrollView}>
         {items.map((item) => (
           <AnimatedTransition key={`${item.id}-${item.quantity}`} type="fadeIn" delay={200}>
@@ -115,12 +123,12 @@ export default function CartScreen() {
           </ThemedText>
         </ThemedView>
         <Button
-          title="Proceed to Checkout"
-          onPress={() => router.push('/checkout')}  // Changed from replace to push and updated the path
+          title={session?.user ? "Proceed to Checkout" : "Sign in to Checkout"}
+          onPress={handleCheckout}
           variant="primary"
           size="large"
           fullWidth
-        />  
+        />
       </ThemedView>
     </ThemedView>
   );

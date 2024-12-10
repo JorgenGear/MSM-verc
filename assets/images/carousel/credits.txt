@@ -1,0 +1,3 @@
+shopping-people.jpg: Photo by Karolina Grabowska from Pexels
+artisan-workshop.jpg: Photo by Rodnae Productions from Pexels
+seasonal-products.jpg: Photo by Karolina Grabowska from Pexels
