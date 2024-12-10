@@ -38,7 +38,6 @@ export default function AccountScreen() {
   const menuItems = [
     { title: 'Your Orders', icon: 'box.fill', route: '/orders' },
     { title: 'Buy Again', icon: 'arrow.clockwise', route: '/buy-again' },
-    { title: 'Your Lists', icon: 'list.bullet', route: '/lists' },
     { title: 'Your Account', icon: 'person.fill', route: '/account-settings' },
     { title: 'Customer Service', icon: 'questionmark.circle.fill', route: '/support' },
     ...(isSeller ? [
