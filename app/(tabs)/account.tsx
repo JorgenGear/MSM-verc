@@ -1,12 +1,10 @@
-import { StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { StyleSheet, ScrollView, Pressable, View } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/hooks/useAuth';
 import { router } from 'expo-router';
-import { AnimatedTransition } from '@/components/AnimatedTransition';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -51,63 +49,69 @@ export default function AccountScreen() {
   ];
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ThemedView style={[styles.header, { backgroundColor: colors.productCardBackground }]}>
-        <ThemedText style={[styles.greeting, { color: colors.text }]}>
-          Hello, {user?.email || 'Guest'}
-        </ThemedText>
-        {user ? (
-          <Pressable style={styles.signOutButton} onPress={signOut}>
-            <ThemedText style={[styles.signOutText, { color: colors.link }]}>Sign Out</ThemedText>
-          </Pressable>
-        ) : (
-          <Pressable style={styles.signInButton} onPress={() => router.push('/login')}>
-            <ThemedText style={[styles.signInText, { color: colors.link }]}>Sign In</ThemedText>
-          </Pressable>
-        )}
-      </ThemedView>
-
-      <ThemedView style={styles.menuSection}>
-        {menuItems.map((item, index) => (
-          <AnimatedTransition key={index} type="fadeInSlide" delay={index * 100}>
-            <Pressable
-              style={[
-                styles.menuItem,
-                {
-                  backgroundColor: colors.productCardBackground,
-                  borderColor: colors.border,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }
-              ]}
-              onPress={() => router.push(item.route)}>
-              <ThemedView style={styles.menuItemContent}>
-                <IconSymbol name={item.icon} size={24} color={colors.text} />
-                <ThemedText style={[styles.menuItemText, { color: colors.text }]}>
-                  {item.title}
-                </ThemedText>
-              </ThemedView>
-              <IconSymbol name="chevron.right" size={20} color={colors.text} />
-            </Pressable>
-          </AnimatedTransition>
-        ))}
-      </ThemedView>
-
+    <ScrollView style={styles.container}>
+      {/* Account Information */}
       {user && (
-        <ThemedView style={styles.accountInfo}>
-          <ThemedText style={[styles.accountInfoTitle, { color: colors.text }]}>
-            Account Information
-          </ThemedText>
-          <ThemedView style={[styles.accountInfoCard, { backgroundColor: colors.productCardBackground }]}>
-            <ThemedText style={[styles.accountInfoLabel, { color: colors.text }]}>Email</ThemedText>
-            <ThemedText style={[styles.accountInfoValue, { color: colors.text }]}>
-              {user.email}
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
+        <View style={styles.accountInfoSection}>
+          <View style={[styles.card, styles.infoCard]}>
+            <View>
+              <ThemedText style={styles.labelText}>Email Address</ThemedText>
+              <ThemedText style={styles.valueText}>{user.email}</ThemedText>
+            </View>
+            <Pressable
+              onPress={signOut}
+              style={styles.signOutButton}
+            >
+              <ThemedText style={styles.signOutText}>Sign Out</ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Menu Items */}
+      <View style={styles.menuContainer}>
+        {menuItems.map((item, index) => (
+          <Pressable 
+            key={index}
+            style={[styles.card, styles.menuItem]}
+            onPress={() => router.push(item.route)}
+          >
+            <View style={styles.menuItemContent}>
+              <View style={styles.iconContainer}>
+                <IconSymbol 
+                  name={item.icon} 
+                  size={24} 
+                  color={colors.primary}
+                />
+              </View>
+              <ThemedText style={styles.menuItemText}>
+                {item.title}
+              </ThemedText>
+            </View>
+            <IconSymbol 
+              name="chevron.right" 
+              size={20} 
+              color={colors.text}
+            />
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Account Security Section */}
+      {user && (
+        <View style={styles.securitySection}>
+          <View style={[styles.card, styles.securityCard]}>
+            <View>
+              <ThemedText style={styles.labelText}>Account Security</ThemedText>
+              <ThemedText style={styles.valueText}>
+                Password • Two-factor authentication
+              </ThemedText>
+            </View>
+            <Pressable onPress={() => router.push('/account-settings')}>
+              <ThemedText style={styles.manageText}>Manage</ThemedText>
+            </Pressable>
+          </View>
+        </View>
       )}
     </ScrollView>
   );
@@ -116,72 +120,73 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
+    backgroundColor: '#f5f5f5',
     padding: 16,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  infoCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  greeting: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  signOutButton: {
-    padding: 8,
-  },
-  signOutText: {
-    fontSize: 16,
-  },
-  signInButton: {
-    padding: 8,
-  },
-  signInText: {
-    fontSize: 16,
-  },
-  menuSection: {
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 16,
+  menuContainer: {
+    marginBottom: 24,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
   },
   menuItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#F3F8F3',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   menuItemText: {
     fontSize: 16,
     fontWeight: '500',
   },
-  accountInfo: {
-    padding: 16,
-    marginTop: 24,
-  },
-  accountInfoTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  accountInfoCard: {
-    padding: 16,
-    borderRadius: 8,
-  },
-  accountInfoLabel: {
+  labelText: {
     fontSize: 14,
-    opacity: 0.7,
+    color: '#666',
     marginBottom: 4,
   },
-  accountInfoValue: {
+  valueText: {
     fontSize: 16,
     fontWeight: '500',
   },
-}); 
+  signOutButton: {
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1A4D2E',
+  },
+  signOutText: {
+    color: '#1A4D2E',
+    fontWeight: '500',
+  },
+  manageText: {
+    color: '#1A4D2E',
+    fontWeight: '500',
+  },
+  securityCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  }
+});
