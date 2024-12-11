@@ -69,13 +69,13 @@ export function AccountScreen() {
       badge: dummyData.paymentMethods.toString(),
       subtitle: 'Manage your payment options'
     },
-    { 
-      title: 'Notifications', 
-      icon: 'bell', 
-      route: '/notifications',
-      badge: '3',
-      subtitle: 'Update your notification preferences'
-    },
+    // { 
+    //   title: 'Notifications', 
+    //   icon: 'bell', 
+    //   route: '/notifications',
+    //   badge: '3',
+    //   subtitle: 'Update your notification preferences'
+    // },
     { 
       title: 'Help & Support', 
       icon: 'questionmark.circle', 
