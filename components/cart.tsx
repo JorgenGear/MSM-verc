@@ -152,8 +152,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 8,
     overflow: 'hidden',
-    opacity: 1, // Add this to ensure items are visible
-    backgroundColor: '#FFFFFF', // Add explicit background color
   },
   itemImage: {
     width: 100,

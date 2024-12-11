@@ -14,7 +14,7 @@ const DUMMY_ORDER = {
   total: '$45.99',
   status: 'Delivered',
   deliveryAddress: {
-    name: 'John Doe',
+    name: 'Rifat Ibn Alam',
     street: '123 Main Street',
     city: 'Logan',
     state: 'UT',
@@ -43,11 +43,11 @@ const DUMMY_ORDER = {
     }
   ],
   timeline: [
-    { status: 'Delivered', date: 'Feb 15, 2024 2:30 PM', description: 'Package delivered' },
-    { status: 'Out for Delivery', date: 'Feb 15, 2024 9:00 AM', description: 'Package is out for delivery' },
-    { status: 'Shipped', date: 'Feb 14, 2024 3:45 PM', description: 'Order has been shipped' },
-    { status: 'Processing', date: 'Feb 13, 2024 10:15 AM', description: 'Order is being processed' },
-    { status: 'Order Placed', date: 'Feb 13, 2024 10:00 AM', description: 'Order confirmed' }
+    { status: 'Delivered', date: 'Dec 10, 2024 2:30 PM', description: 'Package delivered' },
+    { status: 'Out for Delivery', date: 'Dec 09, 2024 9:00 AM', description: 'Package is out for delivery' },
+    { status: 'Shipped', date: 'Dec 08, 2024 3:45 PM', description: 'Order has been shipped' },
+    { status: 'Processing', date: 'Dec 07, 2024 10:15 AM', description: 'Order is being processed' },
+    { status: 'Order Placed', date: 'Dec 06, 2024 10:00 AM', description: 'Order confirmed' }
   ]
 };
 

@@ -53,7 +53,7 @@ export default function CheckoutScreen() {
     setCardDetails(prev => ({ ...prev, expiry: formatted }));
   };
 
-const handleSubmitOrder = async () => {
+  const handleSubmitOrder = async () => {
     if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc || !cardDetails.name) {
       Alert.alert('Error', 'Please fill in all card details');
       return;
@@ -62,36 +62,43 @@ const handleSubmitOrder = async () => {
     setLoading(true);
 
     try {
-      // Create order in Supabase
+      console.log('Creating order with data:', {
+        user_id: user?.id,
+        total: total,
+        items: items
+      });
+
       const orderData = {
         user_id: user?.id,
-        total_amount: total,
-        subtotal: subtotal,
-        tax: tax,
-        items: items,
-        status: 'completed',
-        created_at: new Date().toISOString(),
-        payment_method: 'card',
-        card_last4: cardDetails.number.slice(-4)
+        total: Number(total.toFixed(2))  // Changed from total_amount to total to match DB column
       };
 
       const { data, error } = await supabase
         .from('orders')
-        .insert([orderData])
+        .insert(orderData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
-      // Clear cart after successful order
+      console.log('Order created successfully:', data);
+
+      // Clear cart
       await clearCart();
 
-      // Navigate to success page
+      // Navigate to success
       router.replace('/checkout/success');
       
-    } catch (error) {
-      Alert.alert('Error', 'Failed to process order. Please try again.');
-      console.error('Order error:', error);
+    } catch (error: any) {
+      console.error('Order creation error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to process order. Please try again. ' + 
+        (error.message || '')
+      );
     } finally {
       setLoading(false);
     }
