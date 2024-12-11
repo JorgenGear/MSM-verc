@@ -104,7 +104,7 @@ export default function SellerDashboard() {
       <ThemedView style={styles.actionsContainer}>
         <Pressable 
           style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/products/new')}>
+          onPress={() => router.push('/products/NewProductScreen')}>
           <IconSymbol name="plus" size={20} color="#ffffff" />
           <ThemedText style={styles.actionButtonText}>Add Product</ThemedText>
         </Pressable>
