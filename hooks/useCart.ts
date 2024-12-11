@@ -22,11 +22,14 @@ export function useCart() {
   const loadCart = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('Loading cart data...');
       const cartData = await AsyncStorage.getItem(`cart_${session?.user?.id || 'guest'}`);
       if (cartData) {
         const parsedData = JSON.parse(cartData);
+        console.log('Cart data loaded:', parsedData);
         setItems(parsedData);
       } else {
+        console.log('No cart data found, initializing empty cart.');
         setItems([]);
       }
     } catch (error) {
@@ -39,6 +42,7 @@ export function useCart() {
 
   // Load cart immediately when component mounts or user changes
   useEffect(() => {
+    console.log('useCart effect triggered.');
     loadCart();
   }, [loadCart]);
 

@@ -59,7 +59,7 @@ export default function CartScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
         {items.map((item) => (
           <AnimatedTransition key={`${item.id}-${item.quantity}`} type="fadeIn" delay={200}>
             <ThemedView style={[styles.cartItem, { backgroundColor: colors.productCardBackground }]}>
@@ -76,32 +76,18 @@ export default function CartScreen() {
                 </ThemedText>
                 <ThemedView style={styles.quantityContainer}>
                   <Pressable
-                    style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => {
-                      if (item.quantity > 1) {
-                        updateQuantity(item.id, item.quantity - 1);
-                      } else {
-                        removeItem(item.id);
-                      }
-                    }}>
+                    style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}>
                     <IconSymbol name="minus" size={16} color={colors.text} />
                   </Pressable>
                   <ThemedText style={[styles.quantity, { color: colors.text }]}>
                     {item.quantity}
                   </ThemedText>
                   <Pressable
-                    style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}
-                    onPress={() => {
-                      const newQuantity = item.quantity + 1;
-                      if (newQuantity <= 99) {
-                        updateQuantity(item.id, newQuantity);
-                      }
-                    }}>
+                    style={[styles.quantityButton, { backgroundColor: colors.categoryButtonBackground }]}>
                     <IconSymbol name="plus" size={16} color={colors.text} />
                   </Pressable>
                   <Pressable
-                    style={styles.removeButton}
-                    onPress={() => removeItem(item.id)}>
+                    style={styles.removeButton}>
                     <ThemedText style={[styles.removeText, { color: colors.link }]}>
                       Remove
                     </ThemedText>
@@ -138,42 +124,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.7,
-    marginBottom: 24,
-  },
-  scrollView: {
-    flex: 1,
+  scrollViewContent: {
+    paddingVertical: 16,
   },
   cartItem: {
     flexDirection: 'row',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E7E7E7',
+    marginBottom: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   itemImage: {
     width: 100,
     height: 100,
     borderRadius: 8,
+    marginRight: 16,
   },
   itemDetails: {
     flex: 1,
-    marginLeft: 16,
   },
   itemName: {
     fontSize: 16,
@@ -230,5 +200,27 @@ const styles = StyleSheet.create({
   subtotalAmount: {
     fontSize: 24,
     fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    opacity: 0.7,
+    marginBottom: 24,
+  },
+  scrollView: {
+    flex: 1,
   },
 }); 
