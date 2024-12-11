@@ -5,11 +5,13 @@ import { supabase } from '@/lib/supabase';
 type AuthContextType = {
   session: Session | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
+  signOut: async () => {},
 });
 
 export function useAuth() {
@@ -38,9 +40,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
+
   const value = {
     session,
     loading,
+    signOut,
   };
 
   // Don't render children while loading

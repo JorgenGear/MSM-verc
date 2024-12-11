@@ -1,5 +1,6 @@
+import React from 'react';
 import { useState } from 'react';
-import { StyleSheet, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { StyleSheet, TextInput, Pressable, ActivityIndicator, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -39,6 +40,10 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <Pressable style={styles.homeButton} onPress={() => router.push('/(tabs)/index')}>
+        <IconSymbol name="house" size={24} color={colors.text} />
+        <ThemedText style={styles.homeText}>Home</ThemedText>
+      </Pressable>
       <ThemedView style={styles.header}>
         <IconSymbol name="bag.fill" size={48} color={colors.primary} />
         <ThemedText style={styles.title}>MainStreet Markets</ThemedText>
@@ -181,5 +186,16 @@ const styles = StyleSheet.create({
   companyLoginText: {
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  homeButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  homeText: {
+    fontSize: 16,
+    marginLeft: 8,
   },
 }); 

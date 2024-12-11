@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -8,26 +8,43 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/Button';
+import { supabase } from '@/lib/supabase';
 
 export function AccountScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { session, signOut } = useAuth();
+  const [profile, setProfile] = useState(null);
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace('/(auth)/login');
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (session?.user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(data);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [session?.user]);
 
   const dummyData = {
-    name: "Alex Thompson",
-    email: session?.user?.email || "alex.thompson@example.com",
-    phone: "+1 (555) 123-4567",
-    memberSince: "March 2024",
-    totalOrders: 12,
-    rewardPoints: 450,
-    savedAddresses: 2,
-    paymentMethods: 3,
+    name: profile?.full_name || "Rhett Jorgensen",
+    email: profile?.email || session?.user?.email || "rhettjorg@gmail.com",
+    phone: profile?.contact_phone || "+1 (555) 123-4567",
+    memberSince: profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "March 2024",
+    totalOrders: 12, // This would be fetched from orders table
+    rewardPoints: 450, // This would be calculated based on user activity
+    savedAddresses: 2, // This would be fetched from addresses table
+    paymentMethods: 3, // This would be fetched from payment methods table
   };
 
   const menuItems = [
@@ -67,13 +84,18 @@ export function AccountScreen() {
     },
   ];
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/(auth)/login');
+  };
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <ThemedView style={[styles.profileCard, { backgroundColor: colors.cardBackground }]}>
         <ThemedView style={styles.profileHeader}>
           <ThemedView style={[styles.avatarContainer, { backgroundColor: colors.primary }]}>
             <Image 
-              source={{ uri: 'https://ui-avatars.com/api/?name=Alex+Thompson&background=random' }}
+              source={{ uri: profile?.avatar_url || 'https://ui-avatars.com/api/?name=Alex+Thompson&background=random' }}
               style={styles.avatar}
             />
           </ThemedView>
