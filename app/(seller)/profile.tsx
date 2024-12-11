@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
@@ -9,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 
-export default function SellerOnboarding() {
+export default function SellerProfile() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { session } = useAuth();
@@ -23,24 +22,31 @@ export default function SellerOnboarding() {
     businessHours: '',
   });
 
-  // Check if the user already has a shop
   useEffect(() => {
-    const checkShop = async () => {
+    const fetchProfile = async () => {
       if (session?.user) {
-        const { data: existingShop, error } = await supabase
+        const { data, error } = await supabase
           .from('shops')
-          .select('id')
+          .select('*')
           .eq('owner_id', session.user.id)
           .single();
 
-        if (existingShop) {
-          // Redirect to dashboard if shop exists
-          router.replace('/(seller)/products/new');
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setFormData({
+            businessName: data.business_name || '',
+            businessDescription: data.business_description || '',
+            contactEmail: data.contact_email || '',
+            contactPhone: data.contact_phone || '',
+            businessAddress: data.business_address || '',
+            businessHours: data.business_hours || '',
+          });
         }
       }
     };
 
-    checkShop();
+    fetchProfile();
   }, [session]);
 
   const handleSubmit = async () => {
@@ -51,73 +57,19 @@ export default function SellerOnboarding() {
 
     try {
       setLoading(true);
-
-      // Check if seller profile exists and update or create accordingly
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('seller_profiles')
-        .select()
-        .eq('id', session.user.id)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 means no rows returned
-        throw fetchError;
-      }
-
-      // Update or insert seller profile
-      const { error: sellerError } = await supabase
-        .from('seller_profiles')
-        .upsert({
-          id: session.user.id,
-          business_name: formData.businessName,
-          business_description: formData.businessDescription,
-          contact_email: formData.contactEmail,
-          contact_phone: formData.contactPhone,
-          business_address: formData.businessAddress,
-          business_hours: formData.businessHours,
-          created_at: existingProfile?.created_at || new Date().toISOString(),
-        });
-
-      if (sellerError) throw sellerError;
-
-      // Update user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ is_seller: true })
-        .eq('id', session.user.id);
-
-      if (profileError) throw profileError;
-
-      // Check if shop exists
-      const { data: existingShop, error: shopFetchError } = await supabase
-        .from('shops')
-        .select()
-        .eq('owner_id', session.user.id)
-        .single();
-
-      if (shopFetchError && shopFetchError.code !== 'PGRST116') {
-        throw shopFetchError;
-      }
-
-      // Update or create shop
-      const { error: shopError } = await supabase
+      const { error } = await supabase
         .from('shops')
         .upsert({
-          id: existingShop?.id, // Keep existing ID if it exists
           name: formData.businessName,
           description: formData.businessDescription,
-          owner_id: session.user.id,
-          location: formData.businessAddress,
-          category: existingShop?.category || 'General',
-          rating: existingShop?.rating || 0,
-          created_at: existingShop?.created_at || new Date().toISOString(),
         });
 
-      if (shopError) throw shopError;
+      if (error) throw error;
 
-      router.replace('/(seller)/dashboard');
+      alert('Profile updated successfully!');
     } catch (error) {
-      console.error('Error updating seller profile:', error);
-      alert('Error updating seller profile. Please try again.');
+      console.error('Error updating profile:', error);
+      alert('Error updating profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -126,9 +78,9 @@ export default function SellerOnboarding() {
   return (
     <ScrollView style={styles.container}>
       <ThemedView style={[styles.header, { backgroundColor: colors.primary }]}>
-        <ThemedText style={styles.headerTitle}>Become a Seller</ThemedText>
+        <ThemedText style={styles.headerTitle}>Seller Profile</ThemedText>
         <ThemedText style={styles.headerSubtitle}>
-          Set up your business profile to start selling on MainStreet Markets
+          Update your business information
         </ThemedText>
       </ThemedView>
 
@@ -214,7 +166,7 @@ export default function SellerOnboarding() {
           {loading ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <ThemedText style={styles.submitButtonText}>Create Seller Account</ThemedText>
+            <ThemedText style={styles.submitButtonText}>Update Profile</ThemedText>
           )}
         </Pressable>
       </ThemedView>
@@ -275,4 +227,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-}); 
+});

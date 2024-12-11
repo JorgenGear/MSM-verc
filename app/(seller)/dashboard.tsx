@@ -32,15 +32,14 @@ export default function SellerDashboard() {
   }, [session]);
 
   const loadSellerData = async () => {
-    try {
       setLoading(true);
-      const { data: sellerProfile, error: sellerError } = await supabase
-        .from('seller_profiles')
+      const { data: shops, error: sellerError } = await supabase
+        .from('shops')
         .select('*')
-        .eq('id', session?.user?.id)
+        .eq('owner_id', session?.user?.id)
         .single();
 
-      if (sellerError || !sellerProfile) {
+      if (sellerError || !shops) {
         router.replace('/(seller)/onboarding');
         return;
       }
@@ -49,34 +48,15 @@ export default function SellerDashboard() {
       const { data: products } = await supabase
         .from('products')
         .select('id')
-        .eq('shop_id', sellerProfile.shop_id);
-
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('shop_id', sellerProfile.shop_id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const { data: reviews } = await supabase
-        .from('reviews')
-        .select('rating')
-        .eq('shop_id', sellerProfile.shop_id);
+        .eq('shop_id', shops.id);
 
       setStats({
         totalProducts: products?.length || 0,
-        totalOrders: orders?.length || 0,
-        totalRevenue: orders?.reduce((sum, order) => sum + order.total, 0) || 0,
-        averageRating: reviews?.reduce((sum, review) => sum + review.rating, 0) / (reviews?.length || 1) || 0,
+        totalOrders: 0,
+        totalRevenue: 5,
+        averageRating: 3,
       });
-
-      setRecentOrders(orders || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading seller data:', error);
-      setLoading(false);
-    }
-  };
+  }
 
   if (loading) {
     return (
@@ -124,16 +104,9 @@ export default function SellerDashboard() {
       <ThemedView style={styles.actionsContainer}>
         <Pressable 
           style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/(seller)/products/new')}>
+          onPress={() => router.push('/products/new')}>
           <IconSymbol name="plus" size={20} color="#ffffff" />
           <ThemedText style={styles.actionButtonText}>Add Product</ThemedText>
-        </Pressable>
-
-        <Pressable 
-          style={[styles.actionButton, { backgroundColor: colors.primary }]}
-          onPress={() => router.push('/(seller)/orders')}>
-          <IconSymbol name="list.bullet" size={20} color="#ffffff" />
-          <ThemedText style={styles.actionButtonText}>View Orders</ThemedText>
         </Pressable>
 
         <Pressable 
@@ -142,32 +115,6 @@ export default function SellerDashboard() {
           <IconSymbol name="gear" size={20} color="#ffffff" />
           <ThemedText style={styles.actionButtonText}>Settings</ThemedText>
         </Pressable>
-      </ThemedView>
-
-      {/* Recent Orders */}
-      <ThemedView style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Recent Orders</ThemedText>
-        {recentOrders.map((order: any) => (
-          <Pressable 
-            key={order.id}
-            style={[styles.orderCard, { backgroundColor: colors.background }]}
-            onPress={() => router.push(`/(seller)/orders/${order.id}`)}>
-            <ThemedView style={styles.orderHeader}>
-              <ThemedText style={styles.orderId}>Order #{order.id.slice(0, 8)}</ThemedText>
-              <ThemedText style={[styles.orderStatus, { 
-                color: order.status === 'completed' ? colors.success : 
-                      order.status === 'cancelled' ? colors.error : 
-                      colors.warning 
-              }]}>
-                {order.status.toUpperCase()}
-              </ThemedText>
-            </ThemedView>
-            <ThemedText style={styles.orderTotal}>${order.total}</ThemedText>
-            <ThemedText style={styles.orderDate}>
-              {new Date(order.created_at).toLocaleDateString()}
-            </ThemedText>
-          </Pressable>
-        ))}
       </ThemedView>
     </ScrollView>
   );

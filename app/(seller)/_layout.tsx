@@ -44,6 +44,13 @@ export default function SellerLayout() {
         name="products"
         options={{
           title: 'Manage Products',
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.push('/(seller)/products/new')}
+              style={{ marginLeft: 15 }}>
+              <IconSymbol name="chevron.left" size={24} color="#FFFFFF" />
+            </Pressable>
+          ),
         }}
       />
       <Stack.Screen

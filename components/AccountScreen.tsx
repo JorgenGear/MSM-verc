@@ -82,6 +82,12 @@ export function AccountScreen() {
       route: '/support',
       subtitle: 'Get help with your orders'
     },
+    { 
+      title: 'Sign up or Log in as Seller', 
+      icon: 'questionmark.circle', 
+      route: '/(seller)/onboarding',
+      subtitle: 'Get help with your orders'
+    },
   ];
 
   const handleSignOut = async () => {

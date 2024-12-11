@@ -34,7 +34,7 @@ export default function ProductManagement() {
       const { data: shop, error: shopError } = await supabase
         .from('shops')
         .select('id')
-        .eq('seller_id', session?.user?.id)
+        .eq('owner_id', session?.user?.id)
         .single();
 
       if (shopError) throw shopError;
